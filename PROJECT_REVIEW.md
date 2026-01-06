@@ -44,7 +44,7 @@
     *   `RefinementAgent`: **情报分析专家**。
         *   **智能加工**: 根据预设 Prompt 进行去噪、翻译、摘要重写。
         *   **颜色标签系统**: 自动为“国家/地区”打上红色标签，为“领域”打上蓝色标签。
-        *   **Mock Fallback (容错机制)**: **关键功能**。当 LLM 报错（如 API Key 失效或解析失败）时，自动触发回退逻辑，通过规则保留原始标题摘要并加上 `[AI清洗]` 前缀，保证业务不中断。
+        *   **Mock Fallback (容错机制)**: **关键功能**。当 LLM 报错（如 API Key 失效或解析失败）时，自动触发回退逻辑，通过规则保留原始标题摘要，保证业务不中断。
 *   **[orchestrator.py](file:///home/system_/system_mvp/backend/app/agent/orchestrator.py)**: **调度协调器**
     *   `AgentOrchestrator`: 单例管理 Agent 的初始化、模型配置（DASHSCOPE_API_KEY）以及任务分发。
 

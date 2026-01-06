@@ -321,8 +321,8 @@ class RefinementAgent(DataExtractorAgent):
             
             # Simulated Translation & Tagging
             mock_json = {
-                "title": f"[AI清洗] {title}",
-                "summary": f"{summary[:100]}... (由于API限制，此为自动截取摘要)",
+                "title": title,
+                "summary": f"{summary}",
                 "tags": [
                     {"label": "美国", "color": "red"},
                     {"label": "模拟数据", "color": "gray"}
