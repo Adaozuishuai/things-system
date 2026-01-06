@@ -149,7 +149,11 @@ class PayloadPoller(BasePoller):
                 # Pass through other fields needed for mapping later
                 "publishDate": doc.get("publishDate") or doc.get("createdAt"),
                 "source": doc.get("author") or "PayloadCMS",
-                "url": f"{self.cms_url}/admin/collections/{self.collection_slug}/{doc.get('id')}"
+                "url": f"{self.cms_url}/admin/collections/{self.collection_slug}/{doc.get('id')}",
+                # Pass through custom CMS fields so they are available in _dict_to_intel_item
+                "regional_country": doc.get("regional_country"),
+                "domain": doc.get("domain"),
+                "topicType": doc.get("topicType")
             }
             tasks.append(orchestrator.refine_intel_item(raw_item_dict))
         
@@ -196,12 +200,42 @@ class PayloadPoller(BasePoller):
 
             # Handle Tags (Refiner returns list of dicts, we need list of Tag objects)
             tags = []
+            
+            # 1. AI Refined Tags
             raw_tags = data.get("tags", [])
             for t in raw_tags:
                 if isinstance(t, dict):
                      tags.append(Tag(label=t.get("label"), color=t.get("color", "gray")))
                 elif isinstance(t, str):
                      tags.append(Tag(label=t, color="gray"))
+
+            # 2. CMS Original Fields (regional_country, domain)
+            # regional_country -> Red Tags
+            if "regional_country" in data:
+                rc = data["regional_country"]
+                if isinstance(rc, list):
+                    for c in rc:
+                        tags.append(Tag(label=str(c), color="red"))
+                elif isinstance(rc, str):
+                    tags.append(Tag(label=rc, color="red"))
+            
+            # domain -> Blue Tags
+            if "domain" in data:
+                dm = data["domain"]
+                if isinstance(dm, list):
+                    for d in dm:
+                        tags.append(Tag(label=str(d), color="blue"))
+                elif isinstance(dm, str):
+                    tags.append(Tag(label=dm, color="blue"))
+
+            # topicType -> Gray Tags (Optional)
+            if "topicType" in data:
+                 tt = data["topicType"]
+                 if isinstance(tt, str):
+                     # Split by comma if needed, e.g. "Military,Test"
+                     for t_part in tt.split(','):
+                         if t_part.strip():
+                             tags.append(Tag(label=t_part.strip(), color="gray"))
 
             return IntelItem(
                 id=str(data.get("id")),
