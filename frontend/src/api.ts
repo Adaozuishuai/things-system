@@ -1,0 +1,86 @@
+import axios, { AxiosError } from 'axios';
+import { IntelListResponse, SearchType, TimeRange, IntelItem as IntelItemType } from './types';
+
+// 处理 Vite 环境下 import.meta.env 可能不存在的情况
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api';
+
+const api = axios.create({
+    baseURL: API_BASE,
+});
+
+// 响应拦截器：统一处理错误
+api.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error: AxiosError) => {
+        if (error.response) {
+            const status = error.response.status;
+            if (status === 401) {
+                // 未授权，提示并可能跳转
+                console.warn('Unauthorized (401). Please login.');
+                // 暂时使用 alert 提示，如果有了登录页可以使用 window.location.href = '/login';
+                alert('登录已过期，请重新登录');
+            } else if (status === 403) {
+                // 禁止访问
+                console.warn('Forbidden (403).');
+                alert('您没有权限执行此操作');
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
+export const getIntel = async (
+    type: SearchType = "all",
+    q: string = "",
+    range: TimeRange = "all",
+    limit: number = 20,
+    offset: number = 0
+) => {
+    const res = await api.get<IntelListResponse>('/intel', {
+        params: { type, q, range, limit, offset }
+    });
+    return res.data;
+};
+
+export const getIntelDetail = async (id: string) => {
+    const res = await api.get<IntelItemType>(`/intel/${id}`);
+    return res.data;
+};
+
+export const getFavorites = async (
+    q: string = "",
+    limit: number = 20,
+    offset: number = 0
+) => {
+    const res = await api.get<IntelListResponse>('/intel/favorites', {
+        params: { q, limit, offset }
+    });
+    return res.data;
+};
+
+export const toggleFavorite = async (id: string, favorited: boolean) => {
+    const res = await api.post(`/intel/${id}/favorite`, { favorited });
+    return res.data;
+};
+
+export const runAgentTask = async (query: string, type: SearchType, range: TimeRange) => {
+    const res = await api.post('/agent/run', { query, type, range });
+    return res.data.task_id;
+};
+
+export const getAgentStreamUrl = (taskId: string) => {
+    return `${API_BASE}/agent/stream/${taskId}`;
+};
+
+export const getGlobalStreamUrl = () => {
+    return `${API_BASE}/agent/stream/global`;
+};
+
+export const exportIntel = async (ids: string[], type: SearchType, range: TimeRange, q: string) => {
+    const res = await api.post('/intel/export', { ids: ids.length ? ids : undefined, type, range, q }, {
+        responseType: 'blob'
+    });
+    return res.data;
+};
