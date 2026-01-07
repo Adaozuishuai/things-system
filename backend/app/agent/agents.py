@@ -324,8 +324,8 @@ class RefinementAgent(DataExtractorAgent):
                 "title": title,
                 "summary": f"{summary}",
                 "tags": [
-                    {"label": "美国", "color": "red"},
-                    {"label": "模拟数据", "color": "gray"}
+                    {"label": "国家", "color": "red"},
+                    {"label": "标题", "color": "gray"}
                 ]
             }
             
