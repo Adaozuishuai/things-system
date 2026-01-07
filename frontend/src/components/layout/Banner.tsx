@@ -27,7 +27,7 @@ export function Banner({ onSearch }: BannerProps) {
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
                             placeholder="内容搜索"
-                            className="w-full h-14 pl-6 pr-14 rounded-full bg-white/90 backdrop-blur text-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            className="w-full h-14 pl-6 pr-14 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur text-lg dark:text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400"
                         />
                         <button 
                             type="submit"

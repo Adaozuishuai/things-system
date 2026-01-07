@@ -19,8 +19,14 @@ api.interceptors.response.use(
             if (status === 401) {
                 // 未授权，提示并可能跳转
                 console.warn('Unauthorized (401). Please login.');
+                
+                // Clear local storage to ensure UI sync
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                
                 // 暂时使用 alert 提示，如果有了登录页可以使用 window.location.href = '/login';
                 alert('登录已过期，请重新登录');
+                window.location.href = '/login';
             } else if (status === 403) {
                 // 禁止访问
                 console.warn('Forbidden (403).');

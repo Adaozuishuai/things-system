@@ -14,7 +14,7 @@ interface IntelListProps {
 export function IntelList({ items, loading, onToggleFavorite, selectedIds, onSelect, header }: IntelListProps) {
     if (loading && items.length === 0) {
         return (
-            <div className="flex flex-col h-full bg-white">
+            <div className="flex flex-col h-full bg-white dark:bg-slate-900">
                 {header}
                 <div className="flex items-center justify-center h-64">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -25,9 +25,9 @@ export function IntelList({ items, loading, onToggleFavorite, selectedIds, onSel
 
     if (items.length === 0) {
         return (
-            <div className="flex flex-col h-full bg-white">
+            <div className="flex flex-col h-full bg-white dark:bg-slate-900">
                 {header}
-                <div className="flex items-center justify-center h-64 text-gray-500">
+                <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                     暂无相关情报
                 </div>
             </div>
@@ -36,7 +36,8 @@ export function IntelList({ items, loading, onToggleFavorite, selectedIds, onSel
 
     return (
         <Virtuoso
-            style={{ height: '100%', backgroundColor: 'white' }}
+            style={{ height: '100%' }}
+            className="bg-white dark:bg-slate-900"
             data={items}
             components={{
                 Header: () => <>{header}</>

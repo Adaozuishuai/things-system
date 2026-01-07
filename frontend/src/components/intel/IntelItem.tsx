@@ -15,13 +15,13 @@ export function IntelItem({ item, onToggleFavorite, onSelect, selected }: IntelI
     const navigate = useNavigate();
 
     return (
-        <div className="flex gap-4 p-6 border-b border-gray-100 hover:bg-gray-50 transition-colors group">
+        <div className="flex gap-4 p-6 border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group">
             <div className="pt-1">
                 <input
                     type="checkbox"
                     checked={selected}
                     onChange={(e) => onSelect(item.id, e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    className="w-5 h-5 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
             </div>
             
@@ -37,14 +37,14 @@ export function IntelItem({ item, onToggleFavorite, onSelect, selected }: IntelI
                     role="link"
                     tabIndex={0}
                 >
-                    <h3 className="text-lg font-bold text-gray-900 leading-tight hover:text-blue-600 transition-colors line-clamp-1" title={item.title}>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1" title={item.title}>
                         {item.title}
                     </h3>
                 </div>
-                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed line-clamp-2">
                     {item.summary}
                 </p>
-                <div className="flex items-center gap-4 text-xs text-gray-400 mt-2">
+                <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 mt-2">
                     <span>{item.source}</span>
                     <span>{item.time}</span>
                 </div>
@@ -72,8 +72,8 @@ export function IntelItem({ item, onToggleFavorite, onSelect, selected }: IntelI
                     className={cn(
                         "px-4 py-1.5 rounded-full text-xs font-medium transition-colors",
                         item.favorited 
-                            ? "bg-gray-200 text-gray-500 hover:bg-gray-300" 
-                            : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                            ? "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-slate-600" 
+                            : "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
                     )}
                 >
                     {item.favorited ? "已收藏" : "收藏"}

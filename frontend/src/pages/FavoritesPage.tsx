@@ -47,13 +47,13 @@ export function FavoritesPage() {
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="p-8 bg-white border-b">
-                <h1 className="text-2xl font-bold text-gray-900">我的收藏</h1>
-                <p className="text-gray-500 mt-2">已收藏的情报列表</p>
+        <div className="flex flex-col h-full bg-white dark:bg-slate-900">
+            <div className="p-8 bg-white dark:bg-slate-800 border-b dark:border-slate-700">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">我的收藏</h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">已收藏的情报列表</p>
             </div>
             
-            <div className="flex-1 overflow-y-auto bg-white p-6">
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 p-6">
                 <IntelList 
                     items={items} 
                     loading={loading} 

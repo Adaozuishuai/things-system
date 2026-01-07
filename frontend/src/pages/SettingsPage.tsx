@@ -101,13 +101,13 @@ export function SettingsPage() {
     ];
 
     return (
-        <div className="max-w-4xl mx-auto py-10 px-6">
+        <div className="max-w-6xl mx-auto py-10 px-6">
             <h1 className="text-2xl font-bold text-slate-800 mb-2 dark:text-white">系统设置</h1>
             <p className="text-slate-500 mb-8 dark:text-slate-400">管理您的个人信息和系统偏好。</p>
 
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-12">
                 {/* Sidebar Navigation */}
-                <div className="w-full md:w-64 space-y-1">
+                <div className="w-full md:w-64 space-y-1 shrink-0">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
@@ -129,8 +129,8 @@ export function SettingsPage() {
                 <div className="flex-1 space-y-6">
                     {/* Profile Settings */}
                     {activeTab === 'profile' && (
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-10 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-8 flex items-center gap-2">
                                 <User className="text-blue-500" size={20} />
                                 基本信息
                             </h2>
@@ -205,8 +205,8 @@ export function SettingsPage() {
 
                     {/* Account Security */}
                     {activeTab === 'account' && (
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-10 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-8 flex items-center gap-2">
                                 <Shield className="text-green-500" size={20} />
                                 账号安全
                             </h2>
@@ -255,7 +255,7 @@ export function SettingsPage() {
                                     <button 
                                         onClick={handleUpdatePassword}
                                         disabled={isLoading}
-                                        className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+                                        className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-600 dark:hover:bg-slate-500 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
                                     >
                                         {isLoading ? '更新中...' : '更新密码'}
                                     </button>
@@ -266,8 +266,8 @@ export function SettingsPage() {
 
                     {/* Preference */}
                     {activeTab === 'preference' && (
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-10 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-8 flex items-center gap-2">
                                 <Monitor className="text-purple-500" size={20} />
                                 界面偏好
                             </h2>

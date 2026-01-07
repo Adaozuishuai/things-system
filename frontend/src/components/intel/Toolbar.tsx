@@ -12,13 +12,13 @@ interface ToolbarProps {
 
 export function Toolbar({ activeTab, onTabChange, onExport, timeRange, onTimeRangeChange }: ToolbarProps) {
     return (
-        <div className="flex items-center justify-between px-8 py-4 bg-white border-b sticky top-0 z-10">
+        <div className="flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-800 border-b dark:border-slate-700 sticky top-0 z-10">
             <div className="flex gap-8">
                 <button
                     onClick={() => onTabChange("hot")}
                     className={cn(
                         "text-lg font-medium pb-1 relative transition-colors",
-                        activeTab === "hot" ? "text-red-600" : "text-gray-500 hover:text-red-600"
+                        activeTab === "hot" ? "text-red-600" : "text-gray-500 dark:text-gray-400 hover:text-red-600"
                     )}
                 >
                     <span className="flex items-center gap-2">
@@ -36,12 +36,12 @@ export function Toolbar({ activeTab, onTabChange, onExport, timeRange, onTimeRan
                     onClick={() => onTabChange("history")}
                     className={cn(
                         "text-lg font-medium pb-1 relative transition-colors",
-                        activeTab === "history" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
+                        activeTab === "history" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                     )}
                 >
                     历史情报
                     {activeTab === "history" && (
-                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full" />
+                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
                     )}
                 </button>
             </div>
@@ -49,19 +49,19 @@ export function Toolbar({ activeTab, onTabChange, onExport, timeRange, onTimeRan
             <div className="flex items-center gap-4">
                 <button
                     onClick={onExport}
-                    className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
                 >
                     <Download size={16} />
                     导出
                 </button>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 font-medium">时间选择</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">时间选择</span>
                     <div className="relative">
                         <select
                             value={timeRange}
                             onChange={(e) => onTimeRangeChange(e.target.value as TimeRange)}
-                            className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                            className="appearance-none bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
                         >
                             <option value="all">全部</option>
                             <option value="24h">近24小时</option>
