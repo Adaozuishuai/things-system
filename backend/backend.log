@@ -1,2 +1,389 @@
-nohup: ignoring input
-/usr/bin/python: No module named uvicorn
+INFO:     Will watch for changes in these directories: ['/home/system_/system_mvp/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [76175] using StatReload
+/home/system_/system_mvp/backend/app/main.py:39: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+/home/system_/system_mvp/.venv/lib/python3.12/site-packages/fastapi/applications.py:4576: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  return self.router.on_event(event_type)
+INFO:     Started server process [76177]
+INFO:     Waiting for application startup.
+INFO:payload_poller:PayloadPoller configured: URL=http://203.83.236.223:32101, Collection=articles, User=jellycloud@163.com
+INFO:payload_poller:Poller started
+INFO:payload_poller:Running daily DB cleanup...
+INFO:     Application startup complete.
+INFO:payload_poller:Payload CMS login successful. Token acquired: True
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Processing 10 new items...
+INFO:payload_poller:Doc keys: ['id', 'no', 'title', 'thingId', 'publishDate', 'author', 'summary', 'original', 'translation', 'url', 'regional_country', 'domain', 'imageUrls', 'videosUrls', 'documentUrl', 'coverImageUrl', 'topicType', 'ossBucketName', 'hotTopicId', 'addition_file', 'updatedAt', 'createdAt', 'isFavorite', 'isRecent']
+INFO:payload_poller:Doc thingId: 01KEBP454F4AQJE93WQBK449WW
+INFO:payload_poller:Doc url: https://technews.tw/2026/01/07/usa-is-eyeing-greenland-again-made-european-leaders-issued-a-joint-statment-against-it/
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+Orchestrator initialized, cache empty
+AgentScope inited successfully with DashScope model.
+Auto-starting PayloadPoller with URL: http://203.83.236.223:32101
+ArticlePoller not configured (missing env vars). Skipping auto-start.
+No pending raw data to process.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "8455fcfe-cb3d-4f19-b110-ad61b489de69", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18471 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "31f10341-7c24-42a9-b60f-5a9b254219ae", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18470 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "643b282f-238b-4ece-adc4-aa1d320af440", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18473 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "c1bfe552-7bb5-4e99-9d69-a1cf5a12ab58", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18469 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "4d7cfc8a-251f-4c91-9dec-c98c482ad857", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18472 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "0d937169-a7f7-47a7-a69e-d6545eb26dfc", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18464 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "bfd7282d-ea63-4b39-9506-fca035ba00e0", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18468 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "e8aac08f-0b00-4f1c-b33c-bee69a4226d3", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18467 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "0456511e-ca3b-437a-81aa-9b6c2b484a76", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18466 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "15445044-97c0-41ac-856a-5fb80aa6bd3e", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18465 refined successfully.
+Incoming request: GET http://localhost:8000/?ide_webview_request_time=1767777689520
+Request completed: GET http://localhost:8000/?ide_webview_request_time=1767777689520 - Status: 200 - Time: 0.0010s
+INFO:     127.0.0.1:57658 - "GET /?ide_webview_request_time=1767777689520 HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/@vite/client
+Request completed: GET http://localhost:8000/@vite/client - Status: 404 - Time: 0.0003s
+INFO:     127.0.0.1:57658 - "GET /%40vite/client HTTP/1.1" 404 Not Found
+Incoming request: GET http://localhost:8000/api/auth/me
+Incoming request: GET http://localhost:8000/api/agent/stream/global
+Agent Router: Received global stream request
+New global stream connection request
+Client connected. Total clients: 1
+Request completed: GET http://localhost:8000/api/agent/stream/global - Status: 200 - Time: 0.0036s
+INFO:     127.0.0.1:57670 - "GET /api/agent/stream/global HTTP/1.1" 200 OK
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0203s
+INFO:     127.0.0.1:57662 - "GET /api/auth/me HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0015s
+INFO:     127.0.0.1:57678 - "GET /api/auth/me HTTP/1.1" 200 OK
+Incoming request: POST http://localhost:8000/api/agent/run
+Request completed: POST http://localhost:8000/api/agent/run - Status: 200 - Time: 0.0007s
+INFO:     127.0.0.1:57388 - "POST /api/agent/run HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/agent/stream/d9983163-269c-41ae-8001-91535b016e16
+Request completed: GET http://localhost:8000/api/agent/stream/d9983163-269c-41ae-8001-91535b016e16 - Status: 200 - Time: 0.0010s
+INFO:     127.0.0.1:57394 - "GET /api/agent/stream/d9983163-269c-41ae-8001-91535b016e16 HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0030s
+INFO:     127.0.0.1:57404 - "GET /api/auth/me HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0014s
+INFO:     127.0.0.1:57408 - "GET /api/auth/me HTTP/1.1" 200 OK
+/home/system_/system_mvp/backend/app/services/auth_utils.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  expire = datetime.utcnow() + expires_delta
+Incoming request: POST http://localhost:8000/api/auth/login
+Request completed: POST http://localhost:8000/api/auth/login - Status: 200 - Time: 0.2652s
+INFO:     127.0.0.1:57416 - "POST /api/auth/login HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0024s
+INFO:     127.0.0.1:57418 - "GET /api/auth/me HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/agent/stream/global
+Agent Router: Received global stream request
+New global stream connection request
+Client connected. Total clients: 1
+Request completed: GET http://localhost:8000/api/agent/stream/global - Status: 200 - Time: 0.0005s
+INFO:     127.0.0.1:57424 - "GET /api/agent/stream/global HTTP/1.1" 200 OK
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+WARNING:  StatReload detected changes in 'app/services/payload_poller.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [76177]
+/home/system_/system_mvp/backend/app/main.py:39: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+/home/system_/system_mvp/.venv/lib/python3.12/site-packages/fastapi/applications.py:4576: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  return self.router.on_event(event_type)
+INFO:     Started server process [83883]
+INFO:     Waiting for application startup.
+INFO:payload_poller:PayloadPoller configured: URL=http://203.83.236.223:32101, Collection=articles, User=jellycloud@163.com
+INFO:payload_poller:Poller started
+INFO:payload_poller:Running daily DB cleanup...
+INFO:     Application startup complete.
+Orchestrator initialized, cache empty
+AgentScope inited successfully with DashScope model.
+Auto-starting PayloadPoller with URL: http://203.83.236.223:32101
+ArticlePoller not configured (missing env vars). Skipping auto-start.
+No pending raw data to process.
+Incoming request: GET http://localhost:8000/api/auth/me
+Incoming request: GET http://localhost:8000/api/agent/stream/global
+Agent Router: Received global stream request
+New global stream connection request
+Client connected. Total clients: 1
+Request completed: GET http://localhost:8000/api/agent/stream/global - Status: 200 - Time: 0.0020s
+INFO:     127.0.0.1:52270 - "GET /api/agent/stream/global HTTP/1.1" 200 OK
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0071s
+INFO:     127.0.0.1:52262 - "GET /api/auth/me HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0015s
+INFO:     127.0.0.1:52286 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:payload_poller:Payload CMS login successful. Token acquired: True
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Processing 10 new items...
+INFO:payload_poller:Doc keys: ['id', 'no', 'title', 'thingId', 'publishDate', 'author', 'summary', 'original', 'translation', 'url', 'regional_country', 'domain', 'imageUrls', 'videosUrls', 'documentUrl', 'coverImageUrl', 'topicType', 'ossBucketName', 'hotTopicId', 'addition_file', 'updatedAt', 'createdAt', 'isFavorite', 'isRecent']
+INFO:payload_poller:Doc thingId: 01KEBP454F4AQJE93WQBK449WW
+INFO:payload_poller:Doc url: https://technews.tw/2026/01/07/usa-is-eyeing-greenland-again-made-european-leaders-issued-a-joint-statment-against-it/
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+INFO:payload_poller:Preparing to save item: 18473
+INFO:payload_poller:Creating new item: 18473
+INFO:payload_poller:Preparing to save item: 18472
+INFO:payload_poller:Creating new item: 18472
+INFO:payload_poller:Preparing to save item: 18471
+INFO:payload_poller:Creating new item: 18471
+INFO:payload_poller:Preparing to save item: 18470
+INFO:payload_poller:Creating new item: 18470
+INFO:payload_poller:Preparing to save item: 18469
+INFO:payload_poller:Creating new item: 18469
+INFO:payload_poller:Preparing to save item: 18468
+INFO:payload_poller:Creating new item: 18468
+INFO:payload_poller:Preparing to save item: 18467
+INFO:payload_poller:Creating new item: 18467
+INFO:payload_poller:Preparing to save item: 18466
+INFO:payload_poller:Creating new item: 18466
+INFO:payload_poller:Preparing to save item: 18465
+INFO:payload_poller:Creating new item: 18465
+INFO:payload_poller:Preparing to save item: 18464
+INFO:payload_poller:Creating new item: 18464
+INFO:payload_poller:Refined and broadcasted 10 new items
+ERROR:dashscope:
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "5289f155-bc49-48fc-be50-31cbb82cd7eb", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18472 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "b74ef67f-01e3-4a57-bf77-fcb89128029d", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18470 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "98050363-efa5-42e0-af93-779340ec273e", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18471 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "c2259e17-54d3-494d-b498-dfc4453570b0", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18473 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "cd682289-092b-459d-8a32-0ed8731beed2", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18469 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "7e6a8de1-f70c-4edc-9fa9-037c7eb7b1c3", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18465 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "e94127a5-1eae-4c23-9062-882a350a0f6b", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18464 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "7e8ee938-9c23-4631-9c27-ddc42c71bb92", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18468 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "1a6f1304-6c54-49ee-b57f-8c59553afb1d", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18466 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "b3c564ab-ac69-4f06-bafd-3cbc89fd4702", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18467 refined successfully.
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Broadcasting new_intel to 1 clients
+Incoming request: GET http://localhost:8000/api/intel/18464
+Request completed: GET http://localhost:8000/api/intel/18464 - Status: 200 - Time: 0.0018s
+INFO:     127.0.0.1:52296 - "GET /api/intel/18464 HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/intel/18464
+Request completed: GET http://localhost:8000/api/intel/18464 - Status: 200 - Time: 0.0014s
+INFO:     127.0.0.1:52308 - "GET /api/intel/18464 HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/agent/stream/global
+Agent Router: Received global stream request
+New global stream connection request
+Client connected. Total clients: 1
+Request completed: GET http://localhost:8000/api/agent/stream/global - Status: 200 - Time: 0.0015s
+INFO:     127.0.0.1:41006 - "GET /api/agent/stream/global HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/intel/18472
+Request completed: GET http://localhost:8000/api/intel/18472 - Status: 200 - Time: 0.0013s
+INFO:     127.0.0.1:41952 - "GET /api/intel/18472 HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/intel/18472
+Request completed: GET http://localhost:8000/api/intel/18472 - Status: 200 - Time: 0.0014s
+INFO:     127.0.0.1:41956 - "GET /api/intel/18472 HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'verify_crud_fix.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [83883]
+/home/system_/system_mvp/backend/app/main.py:39: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+/home/system_/system_mvp/.venv/lib/python3.12/site-packages/fastapi/applications.py:4576: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  return self.router.on_event(event_type)
+INFO:     Started server process [84330]
+INFO:     Waiting for application startup.
+INFO:payload_poller:PayloadPoller configured: URL=http://203.83.236.223:32101, Collection=articles, User=jellycloud@163.com
+INFO:payload_poller:Poller started
+INFO:payload_poller:Running daily DB cleanup...
+INFO:     Application startup complete.
+INFO:payload_poller:Payload CMS login successful. Token acquired: True
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Processing 10 new items...
+INFO:payload_poller:Doc keys: ['id', 'no', 'title', 'thingId', 'publishDate', 'author', 'summary', 'original', 'translation', 'url', 'regional_country', 'domain', 'imageUrls', 'videosUrls', 'documentUrl', 'coverImageUrl', 'topicType', 'ossBucketName', 'hotTopicId', 'addition_file', 'updatedAt', 'createdAt', 'isFavorite', 'isRecent']
+INFO:payload_poller:Doc thingId: 01KEBP454F4AQJE93WQBK449WW
+INFO:payload_poller:Doc url: https://technews.tw/2026/01/07/usa-is-eyeing-greenland-again-made-european-leaders-issued-a-joint-statment-against-it/
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+ERROR:dashscope:
+INFO:payload_poller:Preparing to save item: 18473
+INFO:payload_poller:Updating existing item: 18473
+INFO:payload_poller:Preparing to save item: 18472
+INFO:payload_poller:Updating existing item: 18472
+INFO:payload_poller:Preparing to save item: 18471
+INFO:payload_poller:Updating existing item: 18471
+INFO:payload_poller:Preparing to save item: 18470
+INFO:payload_poller:Updating existing item: 18470
+INFO:payload_poller:Preparing to save item: 18469
+INFO:payload_poller:Updating existing item: 18469
+INFO:payload_poller:Preparing to save item: 18468
+INFO:payload_poller:Updating existing item: 18468
+INFO:payload_poller:Preparing to save item: 18467
+INFO:payload_poller:Updating existing item: 18467
+INFO:payload_poller:Preparing to save item: 18466
+INFO:payload_poller:Updating existing item: 18466
+INFO:payload_poller:Preparing to save item: 18465
+INFO:payload_poller:Updating existing item: 18465
+INFO:payload_poller:Preparing to save item: 18464
+INFO:payload_poller:Updating existing item: 18464
+ERROR:dashscope:
+Orchestrator initialized, cache empty
+AgentScope inited successfully with DashScope model.
+Auto-starting PayloadPoller with URL: http://203.83.236.223:32101
+ArticlePoller not configured (missing env vars). Skipping auto-start.
+No pending raw data to process.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "58bd72f2-378e-4fc4-91c8-296f8e548a46", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18473 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "ad23a972-ea16-4009-b044-401484c3d2ec", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18469 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "cc5e3248-cdbb-46d0-b3fc-5138f98193ee", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18471 refined succesINFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18468 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "d6f8ec56-07df-4f8a-b677-84ef7c1e199e", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18464 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "38bf7c86-301a-445f-8936-eb9c82e51fcd", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18466 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "c393ffa6-f29d-40e8-8b80-ac69d51fbadb", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18467 refined successfully.
+RefinementAgent LLM Error: Failed to get response from _ API: {"status_code": 403, "request_id": "ecc531fd-5bea-4756-a6f4-2e41fb583d9f", "code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted. If you wish to continue access the model on a paid basis, please disable the \"use free tier only\" mode in the management console.", "output": null, "usage": null}. Using Mock Fallback.
+Orchestrator: Item 18465 refined successfully.
+Incoming request: GET http://localhost:8000/api/intel/favorites?q=&limit=20&offset=0
+Request completed: GET http://localhost:8000/api/intel/favorites?q=&limit=20&offset=0 - Status: 200 - Time: 0.0060s
+INFO:     127.0.0.1:46096 - "GET /api/intel/favorites?q=&limit=20&offset=0 HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/intel/favorites?q=&limit=20&offset=0
+Request completed: GET http://localhost:8000/api/intel/favorites?q=&limit=20&offset=0 - Status: 200 - Time: 0.0020s
+INFO:     127.0.0.1:46100 - "GET /api/intel/favorites?q=&limit=20&offset=0 HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/agent/stream/global
+Agent Router: Received global stream request
+New global stream connection request
+Client connected. Total clients: 1
+Request completed: GET http://localhost:8000/api/agent/stream/global - Status: 200 - Time: 0.0007s
+INFO:     127.0.0.1:46108 - "GET /api/agent/stream/global HTTP/1.1" 200 OK
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0083s
+INFO:     127.0.0.1:56044 - "GET /api/auth/me HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/agent/stream/global
+Agent Router: Received global stream request
+New global stream connection request
+Client connected. Total clients: 1
+Request completed: GET http://localhost:8000/api/agent/stream/global - Status: 200 - Time: 0.0008s
+INFO:     127.0.0.1:56054 - "GET /api/agent/stream/global HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0016s
+INFO:     127.0.0.1:56064 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+Incoming request: GET http://localhost:8000/api/auth/me
+Incoming request: GET http://localhost:8000/api/agent/stream/global
+Agent Router: Received global stream request
+New global stream connection request
+Client connected. Total clients: 1
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0027s
+INFO:     127.0.0.1:44630 - "GET /api/auth/me HTTP/1.1" 200 OK
+Request completed: GET http://localhost:8000/api/agent/stream/global - Status: 200 - Time: 0.0022s
+INFO:     127.0.0.1:44638 - "GET /api/agent/stream/global HTTP/1.1" 200 OK
+Incoming request: GET http://localhost:8000/api/auth/me
+Request completed: GET http://localhost:8000/api/auth/me - Status: 200 - Time: 0.0013s
+INFO:     127.0.0.1:44644 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
+INFO:payload_poller:Polling Payload CMS: http://203.83.236.223:32101/api/articles
