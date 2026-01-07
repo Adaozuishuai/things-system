@@ -4,20 +4,16 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # Create database directory if not exists
-DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-if not os.path.exists(DB_DIR):
-    os.makedirs(DB_DIR)
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+# DB_DIR = os.path.join(BASE_DIR, "data")
+# if not os.path.exists(DB_DIR):
+#    os.makedirs(DB_DIR)
 
-# Get DB credentials from environment variables with fallback for dev
-DB_USER = os.getenv("POSTGRES_USER", "intel_user")
-DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "intel_pass")
-DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
-DB_NAME = os.getenv("POSTGRES_DB", "intel_db")
-
-SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+# Use SQLite for local development
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'intel.db')}"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

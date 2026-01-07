@@ -100,19 +100,16 @@ class IntelItem(BaseModel):
                         domain.append(item)
                     elif isinstance(item, dict) and 'name' in item:
                         domain.append(item['name'])
-
+                        
         tags = cls.create_tags(regional_country, domain)
-        
-        # Time handling
-        publish_date = data.get('publishDate', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         
         return cls(
             id=str(uuid.uuid4()),
             title=title,
             summary=summary,
-            source=data.get('author', 'CMS Poller'),
+            source=data.get('author', 'CMS'),
             url=data.get('url'),
-            time=publish_date,
+            time=data.get('publishDate', datetime.now().strftime("%Y/%m/%d %H:%M")),
             timestamp=datetime.now().timestamp(),
             tags=tags,
             favorited=False,
@@ -124,9 +121,11 @@ class IntelListResponse(BaseModel):
     total: int
 
 class FavoriteToggleRequest(BaseModel):
+    intel_id: str
     favorited: bool
 
 class ExportRequest(BaseModel):
+    format: Literal["csv", "json", "docx"] = "docx"
     ids: Optional[List[str]] = None
     type: Optional[Literal["hot", "history", "all"]] = "all"
     q: Optional[str] = None
@@ -139,8 +138,35 @@ class AgentSearchRequest(BaseModel):
     top_k: int = 10
 
 class AgentSearchResponse(BaseModel):
-    items: List[IntelItem]
-    answer: Optional[str] = None
+    answer: str
+    sources: List[IntelItem] = []
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    email: Optional[str] = None
+    bio: Optional[str] = None
+    avatar: Optional[str] = None
+    preferences: Optional[Dict[str, Any]] = {}
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    bio: Optional[str] = None
+    avatar: Optional[str] = None
+    preferences: Optional[Dict[str, Any]] = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 class TaskStatusResponse(BaseModel):
     task_id: str

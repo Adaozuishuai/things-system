@@ -30,3 +30,15 @@ class IntelItemDB(Base):
     is_hot = Column(Boolean, default=False)
     favorited = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class UserDB(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    username = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, nullable=True)
+    bio = Column(Text, nullable=True)
+    avatar = Column(String, nullable=True)
+    preferences = Column(JSON, default={})
+    hashed_password = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

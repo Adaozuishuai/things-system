@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from app.routes import intel, agent
+from app.routes import intel, agent, auth
 from app.cors import setup_cors
 from app.agent.orchestrator import orchestrator
 from app.services.poller import article_poller
@@ -32,6 +32,7 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Include Routers
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(intel.router, prefix="/api/intel", tags=["intel"])
 app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
 

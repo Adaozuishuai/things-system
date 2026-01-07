@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+# Load env vars immediately
+load_dotenv()
 
 # DashScope API Configuration
 # 优先从环境变量获取，如果不存在则使用空字符串或抛出错误

@@ -3,6 +3,10 @@ import { Layout } from '@/components/layout/Layout';
 import { IntelPage } from '@/pages/IntelPage';
 import { IntelDetailPage } from '@/pages/IntelDetailPage';
 import { FavoritesPage } from '@/pages/FavoritesPage';
+import { SettingsPage } from '@/pages/SettingsPage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import { AuthProvider } from '@/context/AuthContext';
 
 function PlaceholderPage({ title }: { title: string }) {
     return (
@@ -15,16 +19,20 @@ function PlaceholderPage({ title }: { title: string }) {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/intel" replace />} />
-        <Route path="intel" element={<IntelPage />} />
-        <Route path="intel/:id" element={<IntelDetailPage />} />
-        <Route path="favorites" element={<FavoritesPage />} />
-        <Route path="overview" element={<PlaceholderPage title="数据概览" />} />
-        <Route path="settings" element={<PlaceholderPage title="系统设置" />} />
-      </Route>
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/intel" replace />} />
+          <Route path="intel" element={<IntelPage />} />
+          <Route path="intel/:id" element={<IntelDetailPage />} />
+          <Route path="favorites" element={<FavoritesPage />} />
+          <Route path="overview" element={<PlaceholderPage title="数据概览" />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   );
 }
 

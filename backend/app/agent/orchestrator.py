@@ -188,8 +188,12 @@ class AgentOrchestrator:
             
             # 2. Stream new events
             while True:
-                message = await queue.get()
-                yield message
+                try:
+                    message = await asyncio.wait_for(queue.get(), timeout=15.0)
+                    yield message
+                except asyncio.TimeoutError:
+                    # Send keep-alive comment
+                    yield ": keep-alive\n\n"
         except asyncio.CancelledError:
             pass
         finally:
@@ -332,7 +336,7 @@ class AgentOrchestrator:
                 answer = response_msg.content
                 
                 # 构造最终结果对象
-                result = AgentSearchResponse(items=items, answer=answer)
+                result = AgentSearchResponse(sources=items, answer=answer)
                 task["status"] = "done"
                 task["result"] = result
 
@@ -379,7 +383,7 @@ class AgentOrchestrator:
         # 生成模拟回答
         answer = f"Based on the analysis of {len(items)} items, the situation regarding '{req.query}' shows significant activity. Key trends include recent diplomatic moves and economic indicators."
         
-        result = AgentSearchResponse(items=items, answer=answer)
+        result = AgentSearchResponse(sources=items, answer=answer)
         
         task["status"] = "done"
         task["result"] = result

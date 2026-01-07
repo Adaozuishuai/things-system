@@ -88,6 +88,11 @@ export function useIntelQuery() {
         
         // Wrap startSearch to respect mounted state
         const performSearch = async () => {
+             // Don't auto-trigger agent task for 'hot' type unless there is a query
+             if (type === 'hot' && !query) {
+                 return;
+             }
+
              if (isMounted) {
                  await startSearch(query, type, range);
              }
@@ -99,7 +104,6 @@ export function useIntelQuery() {
             isMounted = false;
             if (eventSourceRef.current) {
                 eventSourceRef.current.close();
-                eventSourceRef.current = null;
             }
         };
     }, [query, type, range, startSearch]);

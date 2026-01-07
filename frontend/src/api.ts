@@ -84,3 +84,37 @@ export const exportIntel = async (ids: string[], type: SearchType, range: TimeRa
     });
     return res.data;
 };
+
+// Auth API
+export const login = async (username: string, password: string) => {
+    const res = await api.post('/auth/login', { username, password });
+    return res.data;
+};
+
+export const register = async (username: string, password: string) => {
+    const res = await api.post('/auth/register', { username, password });
+    return res.data;
+};
+
+export const setAuthToken = (token: string | null) => {
+    if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+        delete api.defaults.headers.common['Authorization'];
+    }
+};
+
+export const updateProfile = async (data: { username?: string, email?: string, bio?: string, preferences?: any }) => {
+    const res = await api.put('/auth/me', data);
+    return res.data;
+};
+
+export const changePassword = async (data: { current_password: string, new_password: string }) => {
+    const res = await api.put('/auth/me/password', data);
+    return res.data;
+};
+
+export const getMe = async () => {
+    const res = await api.get('/auth/me');
+    return res.data;
+};
