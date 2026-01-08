@@ -173,8 +173,10 @@ def get_filtered_intel(
             cutoff = now_ts - 30 * 86400
             query = query.filter(db_models.IntelItemDB.timestamp >= cutoff)
     
-    # 排序：按时间戳倒序 (Sort by timestamp desc)
-    query = query.order_by(db_models.IntelItemDB.timestamp.desc())
+    if type_filter == "history":
+        query = query.order_by(db_models.IntelItemDB.created_at.desc(), db_models.IntelItemDB.timestamp.desc())
+    else:
+        query = query.order_by(db_models.IntelItemDB.timestamp.desc())
 
     total = query.count()
     items = query.offset(offset).limit(limit).all()

@@ -155,8 +155,40 @@ async def get_intel_detail(id: str, db: Session = Depends(get_db)):
 
 @router.post("/{id}/favorite")
 async def toggle_favorite(id: str, req: FavoriteToggleRequest, db: Session = Depends(get_db)):
-    # Pass req.favorited to crud
     item = crud.toggle_favorite(db, id, req.favorited)
-    if not item:
+    if item:
+        return item
+
+    cached = orchestrator.get_cached_intel(id)
+    if not cached:
         raise HTTPException(status_code=404, detail="Item not found")
+
+    tags = []
+    for t in cached.get("tags") or []:
+        if isinstance(t, dict):
+            tags.append(Tag(label=t.get("label", ""), color=t.get("color", "blue")))
+        else:
+            tags.append(Tag(label=str(t), color="blue"))
+
+    intel_item = IntelItem(
+        id=str(cached.get("id", id)),
+        title=cached.get("title") or "",
+        summary=cached.get("summary") or "",
+        source=cached.get("source") or "Hot Stream",
+        url=cached.get("url"),
+        time=cached.get("time") or "",
+        timestamp=float(cached.get("timestamp") or datetime.now().timestamp()),
+        tags=tags,
+        favorited=bool(req.favorited),
+        is_hot=bool(cached.get("is_hot") if cached.get("is_hot") is not None else True),
+        content=cached.get("content"),
+        thing_id=cached.get("thing_id") or cached.get("thingId"),
+    )
+
+    if not crud.get_intel_by_id(db, intel_item.id):
+        crud.create_intel_item(db, intel_item)
+
+    item = crud.toggle_favorite(db, intel_item.id, req.favorited)
+    if not item:
+        raise HTTPException(status_code=500, detail="Failed to toggle favorite")
     return item

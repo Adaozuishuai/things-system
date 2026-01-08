@@ -12,6 +12,10 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+for _k in ("CMS_URL", "CMS_COLLECTION", "CMS_EMAIL", "CMS_PASSWORD", "CMS_USER_COLLECTION", "POLL_INTERVAL", "ARTICLE_POLLER_URL"):
+    if os.environ.get(_k) == "":
+        os.environ.pop(_k, None)
+load_dotenv()
 
 # Create Database Tables
 Base.metadata.create_all(bind=engine)

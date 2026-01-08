@@ -40,12 +40,12 @@ export function IntelList({ items, loading, onToggleFavorite, selectedIds, onSel
             style={{ height: '100%' }}
             className="bg-white dark:bg-slate-900"
             data={safeItems}
+            computeItemKey={(_, item) => item.id}
             components={{
                 Header: () => <>{header}</>
             }}
             itemContent={(_, item) => (
                 <IntelItem 
-                    key={item.id} 
                     item={item} 
                     onToggleFavorite={onToggleFavorite}
                     selected={selectedIds.has(item.id)}

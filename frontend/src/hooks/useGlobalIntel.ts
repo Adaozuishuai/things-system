@@ -2,6 +2,25 @@ import { useState, useEffect, useRef } from 'react';
 import { IntelItem } from '@/types';
 import { getGlobalStreamUrl, toggleFavorite as apiToggleFavorite } from '@/api';
 
+function mergeAndSortByTimestampDesc(existing: IntelItem[], incoming: IntelItem[]) {
+    const byId = new Map<string, IntelItem>();
+
+    for (const item of incoming) {
+        byId.set(item.id, item);
+    }
+
+    for (const item of existing) {
+        const current = byId.get(item.id);
+        if (!current) {
+            byId.set(item.id, item);
+            continue;
+        }
+        byId.set(item.id, { ...current, favorited: item.favorited });
+    }
+
+    return Array.from(byId.values()).sort((a, b) => b.timestamp - a.timestamp);
+}
+
 export function useGlobalIntel(enabled: boolean = true) {
     const [items, setItems] = useState<IntelItem[]>([]);
     const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
@@ -43,10 +62,7 @@ export function useGlobalIntel(enabled: boolean = true) {
             try {
                 const data: IntelItem[] = JSON.parse((event as MessageEvent).data);
                 console.log("Received initial batch:", data.length);
-                // Prepend or set? Since it's initial, set is fine.
-                // But if we want to support reconnect, maybe careful.
-                // Assuming simple case:
-                setItems(data.reverse()); // Newest first?
+                setItems(prev => mergeAndSortByTimestampDesc(prev, data));
             } catch (e) {
                 console.error("Error parsing initial_batch", e);
             }
@@ -57,7 +73,7 @@ export function useGlobalIntel(enabled: boolean = true) {
             try {
                 const item: IntelItem = JSON.parse((event as MessageEvent).data);
                 console.log("Received new intel:", item.id);
-                setItems(prev => [item, ...prev]);
+                setItems(prev => mergeAndSortByTimestampDesc(prev, [item]));
             } catch (e) {
                 console.error("Error parsing new_intel", e);
             }

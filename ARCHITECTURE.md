@@ -1,8 +1,24 @@
 # System Architecture Documentation
 
-## 1. Agent Architecture (AgentScope)
+## 1. Overview
 
-The intelligence system utilizes a multi-agent architecture powered by **AgentScope**. This design decouples task management from specific agent capabilities, allowing for scalable and modular development.
+This repository is an MVP for an AI-assisted intelligence workflow:
+
+- **Backend**: FastAPI + SQLAlchemy (SQLite), AgentScope-powered agents, SSE streaming.
+- **Frontend**: React + Vite + TypeScript, virtualized list, tab-based intel workflow.
+
+The system has two primary user-facing flows:
+
+1. **Real-time Hot Stream** (SSE global stream): new items are broadcast to clients.
+2. **History / Search**: items are read from DB and agent-assisted search streams results.
+
+## 2. Agent Architecture (AgentScope)
+
+The backend uses an orchestrator to manage three agent roles:
+
+- **AnalystAgent**: answers user queries with retrieved context.
+- **DataExtractorAgent**: extracts structured intel from raw text batches (`raw_data`).
+- **RefinementAgent**: cleans/translates/tags intel dicts (used by orchestrator; currently not enabled in the live CMS poller path).
 
 ### Class Diagram
 
@@ -12,8 +28,15 @@ classDiagram
         +tasks: Dict
         +analyst_agent: AnalystAgent
         +extractor_agent: DataExtractorAgent
+        +refinement_agent: RefinementAgent
+        +global_cache: Deque
         +create_task(request)
-        +run_task(task_id)
+        +run_stream(task_id)
+        +run_global_stream()
+        +broadcast(event, data)
+        +get_cached_intel(id)
+        +refine_intel_item(item_dict)
+        +analyze_data_file()
         -_init_agentscope()
     }
 
@@ -22,12 +45,14 @@ classDiagram
     }
 
     class AnalystAgent {
-        +sys_prompt: str
         +reply(x: Msg) -> Msg
     }
 
     class DataExtractorAgent {
-        +sys_prompt: str
+        +reply(x: Msg) -> Msg
+    }
+
+    class RefinementAgent {
         +reply(x: Msg) -> Msg
     }
 
@@ -38,81 +63,137 @@ classDiagram
 
     AgentOrchestrator --> AnalystAgent : manages
     AgentOrchestrator --> DataExtractorAgent : manages
+    AgentOrchestrator --> RefinementAgent : manages
     AnalystAgent --|> AgentBase : inherits
     DataExtractorAgent --|> AgentBase : inherits
+    RefinementAgent --|> AgentBase : inherits
     AnalystAgent ..> DashScopeChatModel : uses
     DataExtractorAgent ..> DashScopeChatModel : uses
+    RefinementAgent ..> DashScopeChatModel : uses
 ```
 
-### Execution Flow (Sequence Diagram)
+### Execution Flows (Sequence Diagrams)
+
+#### 2.1 User Query (Agent-assisted search)
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant API as FastAPI / API
+    participant FE as Frontend
+    participant API as FastAPI
     participant Orch as AgentOrchestrator
-    participant Extractor as DataExtractorAgent
+    participant DB as SQLite
     participant Analyst as AnalystAgent
-    participant DB as Database
 
-    %% Flow 1: Data Extraction (Background Task)
-    Note over API, Orch: Data Ingestion Flow
-    API->>Orch: create_task(Analyze Request)
-    Orch->>Extractor: reply(Raw Text)
-    Extractor->>Extractor: LLM Inference (Extract + Translate to Chinese)
-    Extractor-->>Orch: JSON Structured Data
-    Orch->>DB: Save Intelligence Items
-
-    %% Flow 2: User Query (Search)
-    Note over API, Orch: User Query Flow
-    User->>API: POST /search
-    API->>Orch: create_task(Search Request)
-    Orch->>DB: Retrieve Context (RAG)
-    DB-->>Orch: Context Data
-    Orch->>Analyst: reply(Query + Context)
-    Analyst->>Analyst: LLM Inference (Answer in Chinese)
-    Analyst-->>Orch: Final Answer
-    Orch-->>API: Response
-    API-->>User: Display Result
+    User->>FE: Input query + select tab/range
+    FE->>API: POST /api/agent/run
+    API-->>FE: {task_id}
+    FE->>API: GET /api/agent/stream/{task_id} (SSE)
+    API->>Orch: run_stream(task_id)
+    Orch->>DB: Retrieve context (history) / search cache (hot)
+    DB-->>Orch: Context items
+    Orch->>Analyst: reply(query + context)
+    Analyst-->>Orch: answer + sources
+    Orch-->>FE: event: result + status(done)
 ```
 
-## 2. Backend Architecture
+#### 2.2 Real-time Hot Stream (SSE global stream)
 
-The backend is built with **FastAPI** and **SQLAlchemy**, following a layered architecture.
+```mermaid
+sequenceDiagram
+    participant CMS as Payload CMS
+    participant Poller as PayloadPoller
+    participant Orch as AgentOrchestrator
+    participant FE as Frontend
 
-### Directory Structure
-- **`app/main.py`**: Application entry point, configures CORS and routes.
-- **`app/routes/`**: API route definitions (e.g., `intel.py`).
-- **`app/agent/`**: Agent logic and orchestration (AgentScope integration).
-- **`app/crud.py`**: Database interactions (Create, Read, Update, Delete).
-- **`app/models.py`**: Pydantic models for data validation and API schemas.
-- **`app/db_models.py`**: SQLAlchemy ORM models mapping to database tables.
-- **`app/database.py`**: Database connection and session management.
+    FE->>Orch: GET /api/agent/stream/global (SSE)
+    loop poll interval
+        Poller->>CMS: GET collection docs
+        CMS-->>Poller: docs
+        Poller->>Orch: broadcast("new_intel", item)
+        Orch-->>FE: event: new_intel
+    end
+```
 
-### Key Components
+#### 2.3 “Persist on Detail” (cache → DB)
 
-1.  **Orchestrator Pattern**: `AgentOrchestrator` serves as the central hub. It initializes AgentScope agents (`AnalystAgent`, `DataExtractorAgent`) and manages the lifecycle of asynchronous tasks.
-2.  **Asynchronous Execution**: Long-running agent tasks are handled asynchronously using `asyncio` to prevent blocking the main API thread.
-3.  **Dependency Injection**: Database sessions (`SessionLocal`) are injected into route handlers, ensuring proper connection management.
+```mermaid
+sequenceDiagram
+    participant FE as Frontend
+    participant API as FastAPI
+    participant Orch as AgentOrchestrator
+    participant DB as SQLite
 
-## 3. Database Schema
+    FE->>API: GET /api/intel/{id}
+    API->>DB: SELECT intel_items WHERE id=...
+    alt not found in DB
+        API->>Orch: get_cached_intel(id)
+        Orch-->>API: cached item
+        API->>DB: INSERT intel_items (create_intel_item)
+        DB-->>API: inserted
+    end
+    API-->>FE: IntelItem detail
+```
 
-The database uses **SQLite** (for MVP) with **SQLAlchemy ORM**.
+## 3. Backend Architecture
 
-### `intel_items` Table
+### Directory Structure (key files)
 
-| Column | Type | Description |
+- Entry: [main.py](file:///home/system_/system_mvp/backend/app/main.py)
+- Routes: [routes/intel.py](file:///home/system_/system_mvp/backend/app/routes/intel.py), [routes/agent.py](file:///home/system_/system_mvp/backend/app/routes/agent.py), [routes/auth.py](file:///home/system_/system_mvp/backend/app/routes/auth.py)
+- Agent orchestration: [agent/orchestrator.py](file:///home/system_/system_mvp/backend/app/agent/orchestrator.py), [agent/agents.py](file:///home/system_/system_mvp/backend/app/agent/agents.py)
+- Services: [services/payload_poller.py](file:///home/system_/system_mvp/backend/app/services/payload_poller.py), [services/poller.py](file:///home/system_/system_mvp/backend/app/services/poller.py)
+- Persistence: [database.py](file:///home/system_/system_mvp/backend/app/database.py), [db_models.py](file:///home/system_/system_mvp/backend/app/db_models.py), [crud.py](file:///home/system_/system_mvp/backend/app/crud.py), [models.py](file:///home/system_/system_mvp/backend/app/models.py)
+
+### Public API Surface (current)
+
+- Intel
+  - `GET /api/intel` list with `type/q/range/limit/offset`
+  - `GET /api/intel/favorites`
+  - `POST /api/intel/export`
+  - `GET /api/intel/{id}`
+  - `POST /api/intel/{id}/favorite`
+- Agent
+  - `POST /api/agent/run`
+  - `GET /api/agent/stream/{task_id}` (SSE)
+  - `GET /api/agent/stream/global` (SSE)
+- Auth
+  - `POST /api/auth/register`, `POST /api/auth/login`
+  - `GET/PUT /api/auth/me`, `PUT /api/auth/me/password`
+
+## 4. Database Schema
+
+The MVP uses SQLite with SQLAlchemy ORM.
+
+### 4.1 `intel_items`
+
+| Column | Type | Notes |
 | :--- | :--- | :--- |
-| `id` | String (PK) | UUID, unique identifier for the item. |
-| `title` | String | Title of the intelligence event (Chinese). |
-| `summary` | Text | Detailed summary or value point (Chinese). |
-| `source` | String | Source of the information (e.g., "Reuters"). |
-| `url` | String | **(New)** Original URL of the source. |
-| `publish_time_str` | String | Original publication time string. |
-| `timestamp` | Float | Unix timestamp for sorting. |
-| `tags` | JSON | List of tags (e.g., ["Politics", "Economy"]). |
-| `is_hot` | Boolean | Flag indicating if the item is a hot topic. |
-| `favorited` | Boolean | **(New)** User favorite status. |
+| `id` | String (PK) | UUID |
+| `title` | String | Display title |
+| `summary` | Text | Display summary |
+| `content` | Text | Optional full content |
+| `source` | String | Source label |
+| `url` | String | Optional source URL |
+| `publish_time_str` | String | Display time |
+| `timestamp` | Float | Sorting + range filter |
+| `tags` | JSON | `[{label,color}]` serialized |
+| `is_hot` | Boolean | Hot vs history |
+| `favorited` | Boolean | User state |
+| `thing_id` | String | CMS id mapping |
+| `created_at` | DateTime | DB insert time |
 
----
-**Note**: All intelligence content (Title, Summary, Tags) is mandated to be in **Chinese** via the `DataExtractorAgent` system prompt, regardless of the input language.
+### 4.2 `raw_data`
+
+`raw_data` supports offline/batch extraction via `DataExtractorAgent` (`analyze_data_file`). Items are marked `processed` after extraction.
+
+## 5. Frontend Architecture
+
+### Key modules
+
+- Routing/layout: [App.tsx](file:///home/system_/system_mvp/frontend/src/App.tsx), [Layout.tsx](file:///home/system_/system_mvp/frontend/src/components/layout/Layout.tsx), [Sidebar.tsx](file:///home/system_/system_mvp/frontend/src/components/layout/Sidebar.tsx)
+- Intel workflow: [IntelPage.tsx](file:///home/system_/system_mvp/frontend/src/pages/IntelPage.tsx), [IntelDetailPage.tsx](file:///home/system_/system_mvp/frontend/src/pages/IntelDetailPage.tsx)
+- Data hooks:
+  - [useGlobalIntel.ts](file:///home/system_/system_mvp/frontend/src/hooks/useGlobalIntel.ts) connects to global SSE stream
+  - [useIntelQuery.ts](file:///home/system_/system_mvp/frontend/src/hooks/useIntelQuery.ts) runs agent tasks + streams results
+- API client: [api.ts](file:///home/system_/system_mvp/frontend/src/api.ts)

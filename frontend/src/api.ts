@@ -3,12 +3,7 @@ import { IntelListResponse, SearchType, TimeRange, IntelItem as IntelItemType } 
 
 // 处理 Vite 环境下 import.meta.env 可能不存在的情况
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api';
-const SSE_BASE =
-    typeof API_BASE === 'string' && API_BASE.startsWith('http')
-        ? API_BASE
-        : (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV)
-            ? 'http://localhost:8000/api'
-            : API_BASE;
+const SSE_BASE = API_BASE;
 
 const api = axios.create({
     baseURL: API_BASE,

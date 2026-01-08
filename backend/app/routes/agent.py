@@ -1,5 +1,10 @@
+import os
+from typing import Any, Dict
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
 from app.models import AgentSearchRequest, TaskStatusResponse
 from app.agent.orchestrator import orchestrator
 
@@ -41,3 +46,17 @@ async def get_task_status(task_id: str):
         "status": task["status"],
         "result": task["result"]
     }
+
+
+class DebugBroadcastRequest(BaseModel):
+    event: str
+    data: Dict[str, Any]
+
+
+@router.post("/debug/broadcast")
+async def debug_broadcast(req: DebugBroadcastRequest):
+    enabled = os.getenv("ENABLE_DEBUG_ENDPOINTS", "").lower() in {"1", "true", "yes", "on"}
+    if not enabled:
+        raise HTTPException(status_code=404, detail="Not found")
+    await orchestrator.broadcast(req.event, req.data)
+    return {"ok": True}
