@@ -2,6 +2,8 @@ import io
 from datetime import datetime
 from urllib.parse import quote
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt, Cm
 from fastapi import APIRouter, HTTPException, Response, Depends
 from typing import Optional, Literal
 from sqlalchemy.orm import Session
@@ -16,7 +18,7 @@ router = APIRouter()
 async def get_intel(
     type: Literal["hot", "history", "all"] = "all",
     q: Optional[str] = None,
-    range: Literal["all", "24h", "7d", "30d"] = "all",
+    range: Literal["all", "3h", "6h", "12h"] = "all",
     limit: int = 20,
     offset: int = 0,
     db: Session = Depends(get_db)
@@ -50,32 +52,59 @@ async def export_intel(req: ExportRequest, db: Session = Depends(get_db)):
             limit=1000
         )
     
-    # Generate DOCX
     doc = Document()
-    doc.add_heading('Intelligence Export', 0)
-    
-    for item in items:
-        doc.add_heading(item.title, level=1)
-        
-        # Meta info
+
+    normal_style = doc.styles["Normal"]
+    normal_style.font.size = Pt(12)
+
+    def _safe_text(v: Optional[str]) -> str:
+        return (v or "").strip()
+
+    def _add_kv_line(key: str, value: str):
         p = doc.add_paragraph()
-        p.add_run('ID: ').bold = True
-        p.add_run(f"{item.id}\n")
-        p.add_run('Time: ').bold = True
-        p.add_run(f"{item.time}\n")
-        p.add_run('Source: ').bold = True
-        p.add_run(f"{item.source}\n")
-        p.add_run('Tags: ').bold = True
-        tags_str = ", ".join([t.label for t in item.tags])
-        p.add_run(f"{tags_str}\n")
-        p.add_run('Favorited: ').bold = True
-        p.add_run(f"{item.favorited}")
-        
-        # Summary
-        doc.add_heading('Summary', level=2)
-        doc.add_paragraph(item.summary)
-        
-        doc.add_paragraph('_' * 50)
+        rk = p.add_run(f"{key}：")
+        rk.bold = True
+        p.add_run(value)
+        return p
+
+    def _add_center_title(text: str):
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p.add_run(text)
+        r.bold = True
+        r.font.size = Pt(16)
+        return p
+
+    def _add_body(text: str):
+        p = doc.add_paragraph(text)
+        p.paragraph_format.first_line_indent = Cm(0.74)
+        p.paragraph_format.line_spacing = 1.25
+        return p
+
+    for idx, item in enumerate(items):
+        tags_value = " / ".join([t.label for t in (item.tags or []) if _safe_text(t.label)])
+        if not tags_value:
+            tags_value = "暂无"
+
+        _add_kv_line("拟投栏目", tags_value)
+        _add_kv_line("事件时间", _safe_text(item.time) or "暂无")
+        _add_kv_line("价值点", _safe_text(item.summary) or "暂无")
+
+        doc.add_paragraph()
+
+        _add_center_title(_safe_text(item.title) or "未命名")
+
+        body_text = _safe_text(item.content) or _safe_text(item.summary)
+        if body_text:
+            _add_body(body_text)
+
+        source_parts = [f"来源：{_safe_text(item.source) or 'Unknown'}", f"原标题：{_safe_text(item.title) or '未命名'}"]
+        if _safe_text(item.url):
+            source_parts.append(f"来源URL：{_safe_text(item.url)}")
+        doc.add_paragraph(f"（{'，'.join(source_parts)}）")
+
+        if idx != len(items) - 1:
+            doc.add_page_break()
     
     output = io.BytesIO()
     doc.save(output)

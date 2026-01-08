@@ -27,4 +27,4 @@ export interface AgentSearchResponse {
 }
 
 export type SearchType = "hot" | "history" | "all";
-export type TimeRange = "all" | "24h" | "7d" | "30d";
+export type TimeRange = "all" | "3h" | "6h" | "12h";

@@ -203,12 +203,12 @@ class AgentOrchestrator:
         cutoff: Optional[float] = None
         if range_filter != "all":
             now_ts = datetime.now().timestamp()
-            if range_filter == "24h":
-                cutoff = now_ts - 86400
-            elif range_filter == "7d":
-                cutoff = now_ts - 7 * 86400
-            elif range_filter == "30d":
-                cutoff = now_ts - 30 * 86400
+            if range_filter == "3h":
+                cutoff = now_ts - 3 * 3600
+            elif range_filter == "6h":
+                cutoff = now_ts - 6 * 3600
+            elif range_filter == "12h":
+                cutoff = now_ts - 12 * 3600
 
         for raw in reversed(self.global_cache):
             if not isinstance(raw, dict):

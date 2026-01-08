@@ -53,6 +53,8 @@ export function IntelPage() {
                         "mb-6 p-4 rounded-lg border flex items-center gap-3 mx-6 mt-6",
                         liveStatus === 'connected'
                             ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/40"
+                            : liveStatus === 'reconnecting'
+                                ? "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/40"
                             : liveStatus === 'error'
                                 ? "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/40"
                                 : "bg-blue-50 dark:bg-blue-900/30 border-blue-100 dark:border-blue-800",
@@ -62,6 +64,8 @@ export function IntelPage() {
                         <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
                     ) : liveStatus === 'error' ? (
                         <span className="w-2 h-2 rounded-full bg-red-600 dark:bg-red-400" />
+                    ) : liveStatus === 'reconnecting' ? (
+                        <Loader2 className="animate-spin text-red-600 dark:text-red-400" />
                     ) : (
                         <Loader2 className="animate-spin text-blue-600 dark:text-blue-400" />
                     )}
@@ -71,6 +75,8 @@ export function IntelPage() {
                                 "font-medium",
                                 liveStatus === 'connected'
                                     ? "text-emerald-900 dark:text-emerald-100"
+                                    : liveStatus === 'reconnecting'
+                                        ? "text-red-900 dark:text-red-100"
                                     : liveStatus === 'error'
                                         ? "text-red-900 dark:text-red-100"
                                         : "text-blue-900 dark:text-blue-100",
@@ -79,10 +85,10 @@ export function IntelPage() {
                             {liveStatus === 'connected'
                                 ? '推送中'
                                 : liveStatus === 'reconnecting'
-                                    ? '热流重连中...'
+                                    ? '重连中...'
                                     : liveStatus === 'connecting'
-                                        ? '热流连接中...'
-                                        : '热流连接失败'}
+                                        ? '连接中...'
+                                        : '消息推送连接失败'}
                         </span>
                         {liveStatus === 'error' && (
                             <button

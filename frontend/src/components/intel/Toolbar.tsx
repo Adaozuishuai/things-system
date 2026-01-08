@@ -66,9 +66,9 @@ export function Toolbar({ activeTab, onTabChange, onExport, timeRange, onTimeRan
                                 className="appearance-none bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
                             >
                                 <option value="all">全部</option>
-                                <option value="24h">近24小时</option>
-                                <option value="7d">近7天</option>
-                                <option value="30d">近30天</option>
+                                <option value="3h">近3小时</option>
+                                <option value="6h">近6小时</option>
+                                <option value="12h">近12小时</option>
                             </select>
                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
                         </div>

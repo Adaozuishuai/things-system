@@ -48,16 +48,13 @@ export function IntelItem({ item, onToggleFavorite, onSelect, selected }: IntelI
                     <span>{item.source}</span>
                     <span>{item.time}</span>
                 </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-3 shrink-0 w-48">
-                <div className="flex flex-wrap justify-end gap-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                     {item.tags.map((tag, idx) => {
                         return (
-                            <span 
-                                key={idx} 
+                            <span
+                                key={idx}
                                 className={cn(
-                                    "px-3 py-1 text-xs rounded-full font-medium whitespace-nowrap", 
+                                    "px-3 py-1 text-xs rounded-full font-medium whitespace-nowrap",
                                     TAG_COLORS[tag.color] || TAG_COLORS.gray
                                 )}
                             >
@@ -66,7 +63,9 @@ export function IntelItem({ item, onToggleFavorite, onSelect, selected }: IntelI
                         );
                     })}
                 </div>
-                
+            </div>
+
+            <div className="flex flex-col items-end gap-3 shrink-0">
                 <button
                     onClick={() => onToggleFavorite(item.id, item.favorited)}
                     className={cn(

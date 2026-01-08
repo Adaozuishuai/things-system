@@ -100,12 +100,12 @@ class ExportRequest(BaseModel):
     ids: Optional[List[str]] = None
     type: Optional[Literal["hot", "history", "all"]] = "all"
     q: Optional[str] = None
-    range: Optional[Literal["all", "24h", "7d", "30d"]] = "all"
+    range: Optional[Literal["all", "3h", "6h", "12h"]] = "all"
 
 class AgentSearchRequest(BaseModel):
     query: str
     type: Optional[Literal["hot", "history"]] = "hot"
-    range: Optional[Literal["all", "24h", "7d", "30d"]] = "all"
+    range: Optional[Literal["all", "3h", "6h", "12h"]] = "all"
     top_k: int = 10
 
 class AgentSearchResponse(BaseModel):

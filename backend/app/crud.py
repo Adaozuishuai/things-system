@@ -135,7 +135,7 @@ def get_filtered_intel(
         db: 数据库会话
         type_filter: 类型筛选 ("hot", "history", "all")
         q: 搜索关键词 (匹配标题或摘要)
-        range_filter: 时间范围筛选 ("all", "24h", "7d", "30d")
+        range_filter: 时间范围筛选 ("all", "3h", "6h", "12h")
         limit: 每页条数
         offset: 分页偏移量
     
@@ -163,14 +163,14 @@ def get_filtered_intel(
     # 3. 时间范围筛选 (Time Range)
     if range_filter != "all":
         now_ts = datetime.now().timestamp()
-        if range_filter == "24h":
-            cutoff = now_ts - 86400
+        if range_filter == "3h":
+            cutoff = now_ts - 3 * 3600
             query = query.filter(db_models.IntelItemDB.timestamp >= cutoff)
-        elif range_filter == "7d":
-            cutoff = now_ts - 7 * 86400
+        elif range_filter == "6h":
+            cutoff = now_ts - 6 * 3600
             query = query.filter(db_models.IntelItemDB.timestamp >= cutoff)
-        elif range_filter == "30d":
-            cutoff = now_ts - 30 * 86400
+        elif range_filter == "12h":
+            cutoff = now_ts - 12 * 3600
             query = query.filter(db_models.IntelItemDB.timestamp >= cutoff)
     
     if type_filter == "history":
