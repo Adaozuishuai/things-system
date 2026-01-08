@@ -4,7 +4,6 @@ from datetime import datetime
 from urllib.parse import quote
 from docx import Document
 from fastapi import APIRouter, HTTPException, Response, Depends
-from pydantic import BaseModel
 from typing import Optional, Literal
 from sqlalchemy.orm import Session
 from app.models import IntelListResponse, FavoriteToggleRequest, ExportRequest, IntelItem, Tag, KafkaPayload
@@ -204,67 +203,3 @@ async def toggle_favorite(id: str, req: FavoriteToggleRequest, db: Session = Dep
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
-
-class PollerConfig(BaseModel):
-    base_url: str
-    start_id: int = 6617
-    interval: int = 5
-
-@router.post("/poller/start")
-async def start_poller(config: PollerConfig):
-    from app.services.poller import article_poller
-    article_poller.configure(config.base_url, config.start_id, config.interval)
-    await article_poller.start()
-    return {"status": "started", "config": config}
-
-@router.post("/poller/stop")
-async def stop_poller():
-    from app.services.poller import article_poller
-    await article_poller.stop()
-    return {"status": "stopped"}
-
-@router.get("/poller/status")
-async def get_poller_status():
-    from app.services.poller import article_poller
-    return {
-        "running": article_poller.is_running,
-        "current_id": article_poller.current_id,
-        "base_url": article_poller.base_url
-    }
-
-class PayloadPollerConfig(BaseModel):
-    cms_url: str
-    collection_slug: str
-    email: str
-    password: str
-    user_collection: str = "users"
-    interval: int = 10
-
-@router.post("/payload/start")
-async def start_payload_poller(config: PayloadPollerConfig):
-    from app.services.payload_poller import payload_poller
-    payload_poller.configure(
-        cms_url=config.cms_url,
-        collection_slug=config.collection_slug,
-        email=config.email,
-        password=config.password,
-        user_collection=config.user_collection,
-        interval=config.interval
-    )
-    await payload_poller.start()
-    return {"status": "started", "config": config.model_dump(exclude={'password'})}
-
-@router.post("/payload/stop")
-async def stop_payload_poller():
-    from app.services.payload_poller import payload_poller
-    await payload_poller.stop()
-    return {"status": "stopped"}
-
-@router.get("/payload/status")
-async def get_payload_poller_status():
-    from app.services.payload_poller import payload_poller
-    return {
-        "running": payload_poller.is_running,
-        "cms_url": payload_poller.cms_url,
-        "collection": payload_poller.collection_slug
-    }

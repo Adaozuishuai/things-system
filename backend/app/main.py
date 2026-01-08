@@ -4,7 +4,6 @@ from app.cors import setup_cors
 from app.agent.orchestrator import orchestrator
 from app.services.poller import article_poller
 from app.services.payload_poller import payload_poller
-from app.services.mock_poller import mock_poller
 from app.database import engine, Base
 import asyncio
 import os
@@ -71,7 +70,6 @@ async def startup_event():
     # If no real pollers configured, start Mock Poller for demo
     if not poller_started:
         print("No real pollers configured. MockPoller is disabled by request.")
-        # await mock_poller.start()
 
 @app.get("/")
 async def root():
