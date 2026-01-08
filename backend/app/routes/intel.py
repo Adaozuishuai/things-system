@@ -42,7 +42,59 @@ async def export_intel(req: ExportRequest, db: Session = Depends(get_db)):
     items = []
     
     if req.ids and len(req.ids) > 0:
-        items = crud.get_by_ids(db, req.ids)
+        db_items = crud.get_by_ids(db, req.ids)
+
+        by_id = {x.id: x for x in db_items}
+
+        missing_ids = [x for x in req.ids if x not in by_id]
+        cached_items = {}
+        for missing_id in missing_ids:
+            cached = orchestrator.get_cached_intel(missing_id)
+            if not cached:
+                continue
+
+            tags = []
+            for t in cached.get("tags") or []:
+                if isinstance(t, dict):
+                    tags.append(Tag(label=t.get("label", ""), color=t.get("color", "blue")))
+                else:
+                    tags.append(Tag(label=str(t), color="blue"))
+
+            intel_item = IntelItem(
+                id=str(cached.get("id", missing_id)),
+                title=cached.get("title") or "",
+                summary=cached.get("summary") or "",
+                source=cached.get("source") or "Hot Stream",
+                url=cached.get("url"),
+                time=cached.get("time") or "",
+                timestamp=float(cached.get("timestamp") or datetime.now().timestamp()),
+                tags=tags,
+                favorited=bool(cached.get("favorited") or False),
+                is_hot=False,
+                content=cached.get("content"),
+                thing_id=cached.get("thing_id") or cached.get("thingId"),
+            )
+
+            if not crud.get_intel_by_id(db, intel_item.id):
+                crud.create_intel_item(db, intel_item)
+
+            cached_items[intel_item.id] = intel_item
+
+        resolved_items = []
+        unresolved_ids = []
+        for requested_id in req.ids:
+            if requested_id in by_id:
+                resolved_items.append(by_id[requested_id])
+                continue
+            if requested_id in cached_items:
+                resolved_items.append(cached_items[requested_id])
+                continue
+            unresolved_ids.append(requested_id)
+
+        if unresolved_ids:
+            raise HTTPException(status_code=404, detail=f"Items not found: {', '.join(unresolved_ids)}")
+
+        items = resolved_items
     else:
         items, _ = crud.get_filtered_intel(
             db,

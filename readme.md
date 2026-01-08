@@ -33,7 +33,7 @@ An intelligent intelligence aggregation and refinement platform. This system pol
 -   **UI Components**: Lucide React, React Virtuoso (Virtual List)
 -   **State/API**: Context API, Axios
 
-## � Prerequisites
+## ✅ Prerequisites
 
 -   Python 3.9+
 -   Node.js 16+
@@ -104,6 +104,31 @@ An intelligent intelligence aggregation and refinement platform. This system pol
     ```
     The application will be available at `http://localhost:5173`.
 
+## 📄 Export (DOCX)
+
+-   **Endpoint**: `POST /api/intel/export`
+-   **Data Source**:
+    -   If `ids` are provided, the API exports items in the same order as `ids`.
+    -   If some `ids` are not found in the database, the API falls back to the hot-stream cache and persists them to the database during export.
+    -   If `ids` are not provided, the API exports by filters (`type/q/range`) with `limit=1000`.
+-   **DOCX Layout (per item)**:
+    1.  拟投栏目：`tag1 / tag2 / ...`
+    2.  事件时间：`time`
+    3.  价值点：`summary`
+    4.  标题（居中加粗）：`title`
+    5.  正文：`content`（为空时回退到 `summary`）
+    6.  （来源信息）：`来源 / 原标题 / 来源URL`
+
+## 🧪 Tests
+
+This repo uses simple Python scripts under `tests/` for validation.
+
+-   DOCX export format test:
+    ```bash
+    python tests/test_export_docx_format.py
+    ```
+    This test generates a DOCX, reads it back, and asserts the paragraph order and content.
+
 ## 📂 Project Structure
 
 ```
@@ -128,7 +153,7 @@ system_mvp/
 │   │   ├── api.ts          # API Client
 │   │   └── App.tsx
 │   └── package.json
-└── README.md
+└── readme.md
 ```
 
 ## 🔍 Key Concepts
