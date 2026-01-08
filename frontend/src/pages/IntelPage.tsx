@@ -1,9 +1,9 @@
 import { useIntelQuery } from '@/hooks/useIntelQuery';
 import { useGlobalIntel } from '@/hooks/useGlobalIntel';
-import { Banner } from '@/components/layout/Banner';
 import { Toolbar } from '@/components/intel/Toolbar';
 import { IntelList } from '@/components/intel/IntelList';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export function IntelPage() {
     const {
@@ -21,6 +21,29 @@ export function IntelPage() {
     } = useIntelQuery();
 
     const { items: liveItems, status: liveStatus, toggleFavorite: toggleLiveFavorite } = useGlobalIntel(type === 'hot');
+
+    const [historySearchOpen, setHistorySearchOpen] = useState(false);
+    const [historySearchValue, setHistorySearchValue] = useState('');
+    const historySearchInputRef = useRef<HTMLInputElement | null>(null);
+
+    const handleTabChange = (tab: typeof type) => {
+        setType(tab);
+        if (tab === 'history') {
+            setHistorySearchOpen(true);
+        } else {
+            setHistorySearchOpen(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!historySearchOpen) return;
+        const t = window.setTimeout(() => historySearchInputRef.current?.focus(), 0);
+        return () => window.clearTimeout(t);
+    }, [historySearchOpen]);
+
+    const submitHistorySearch = () => {
+        setQuery(historySearchValue);
+    };
 
     // Determine which items to show
     const items = type === 'hot' ? liveItems : searchItems;
@@ -63,15 +86,72 @@ export function IntelPage() {
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-900">
-            <Banner onSearch={setQuery} />
-            
             <div className="flex flex-col flex-1 overflow-hidden">
                 <Toolbar 
                     activeTab={type} 
-                    onTabChange={setType} 
+                    onTabChange={handleTabChange} 
                     onExport={handleExport}
                     timeRange={range}
                     onTimeRangeChange={setRange}
+                    below={
+                        <div className="bg-white dark:bg-slate-800 border-b dark:border-slate-700">
+                            <div
+                                className={[
+                                    "relative z-20 overflow-hidden transition-all duration-300 ease-out",
+                                    type === 'history' && historySearchOpen ? "max-h-28" : "max-h-0",
+                                ].join(' ')}
+                            >
+                                <div
+                                    className={[
+                                        "px-6 md:px-8 pt-3 pb-4",
+                                        "transition-all duration-300 ease-out",
+                                        type === 'history' && historySearchOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2",
+                                    ].join(' ')}
+                                >
+                                    <form
+                                        className="w-full max-w-3xl mx-auto"
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            submitHistorySearch();
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative flex-1">
+                                                <Search
+                                                    size={18}
+                                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                                                />
+                                                <input
+                                                    ref={historySearchInputRef}
+                                                    type="text"
+                                                    value={historySearchValue}
+                                                    onChange={(e) => setHistorySearchValue(e.target.value)}
+                                                    placeholder="在历史情报中搜索"
+                                                    className="w-full h-11 pl-11 pr-4 rounded-full bg-gray-50 dark:bg-slate-700 text-base dark:text-white shadow-sm border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-300"
+                                                />
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                className="h-11 px-5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm font-medium"
+                                            >
+                                                搜索
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setHistorySearchOpen(false)}
+                                                className="h-11 w-11 rounded-full bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors border border-gray-200 dark:border-slate-600 flex items-center justify-center"
+                                                aria-label="关闭"
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 />
                 
                 <div className="flex-1 overflow-hidden bg-white dark:bg-slate-900">

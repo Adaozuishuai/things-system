@@ -7,6 +7,7 @@ export interface IntelItem {
     id: string;
     title: string;
     summary: string;
+    content?: string;
     source: string;
     url?: string;
     time: string;

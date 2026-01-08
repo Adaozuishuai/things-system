@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { IntelItem, SearchType, TimeRange, AgentSearchResponse } from '@/types';
 import { getIntel, runAgentTask, getAgentStreamUrl, toggleFavorite as apiToggleFavorite, exportIntel } from '@/api';
+import { streamSse } from '@/lib/sseFetch';
 
 export function useIntelQuery() {
     const [items, setItems] = useState<IntelItem[]>([]);
@@ -16,14 +17,13 @@ export function useIntelQuery() {
     // Selection
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    const eventSourceRef = useRef<EventSource | null>(null);
-    const isClosingRef = useRef(false);
+    const abortRef = useRef<AbortController | null>(null);
 
     const startSearch = useCallback(async (q: string, t: SearchType, r: TimeRange) => {
         // Cancel previous stream if any
-        if (eventSourceRef.current) {
-            isClosingRef.current = true;
-            eventSourceRef.current.close();
+        if (abortRef.current) {
+            abortRef.current.abort();
+            abortRef.current = null;
         }
 
         setStatus('loading');
@@ -43,57 +43,54 @@ export function useIntelQuery() {
             
             setStatus('streaming');
             const url = getAgentStreamUrl(taskId);
-            const es = new EventSource(url);
-            eventSourceRef.current = es;
-            isClosingRef.current = false;
+            const abort = new AbortController();
+            abortRef.current = abort;
 
-            es.onmessage = (_event) => {
-                // Keep-alive or generic message
-            };
+            await streamSse(
+                url,
+                { signal: abort.signal },
+                (evt) => {
+                    const type = evt.event;
+                    if (type === 'status') {
+                        const data = JSON.parse(evt.data);
+                        if (data.status === 'done') {
+                            setStatus('done');
+                            setProgress(null);
+                            abort.abort();
+                        }
+                        return;
+                    }
 
-            es.addEventListener('status', (event) => {
-                const messageEvent = event as MessageEvent;
-                const data = JSON.parse(messageEvent.data);
-                if (data.status === 'done') {
-                    isClosingRef.current = true;
-                    es.close();
-                    setStatus('done');
-                    setProgress(null);
-                }
-            });
+                    if (type === 'progress') {
+                        const data = JSON.parse(evt.data);
+                        setProgress(data);
+                        return;
+                    }
 
-            es.addEventListener('progress', (event) => {
-                const messageEvent = event as MessageEvent;
-                const data = JSON.parse(messageEvent.data);
-                setProgress(data);
-            });
+                    if (type === 'result') {
+                        const data: AgentSearchResponse = JSON.parse(evt.data);
+                        setItems(data.sources ?? []);
+                        setAnswer(data.answer || null);
+                        return;
+                    }
 
-            es.addEventListener('result', (event) => {
-                const messageEvent = event as MessageEvent;
-                const data: AgentSearchResponse = JSON.parse(messageEvent.data);
-                setItems(data.sources ?? []);
-                setAnswer(data.answer || null);
-            });
-
-            es.addEventListener('error', (event) => {
-                if (isClosingRef.current || es.readyState === EventSource.CLOSED) {
-                    return;
-                }
-                console.error("SSE Error", event);
-                es.close();
-                setStatus('error');
-            });
-
-            es.onerror = (err) => {
-                if (isClosingRef.current || es.readyState === EventSource.CLOSED) {
-                    return;
-                }
-                console.error("EventSource failed", err);
-                es.close();
-                setStatus('error');
-            };
+                    if (type === 'error') {
+                        setStatus('error');
+                        abort.abort();
+                    }
+                },
+            );
 
         } catch (err) {
+            if (abortRef.current?.signal.aborted) {
+                return;
+            }
+            if ((err as any)?.name === 'AbortError') {
+                return;
+            }
+            if (err instanceof TypeError && String(err.message || '').toLowerCase().includes('failed to fetch')) {
+                return;
+            }
             console.error(err);
             setStatus('error');
         }
@@ -119,9 +116,7 @@ export function useIntelQuery() {
 
         return () => {
             isMounted = false;
-            if (eventSourceRef.current) {
-                eventSourceRef.current.close();
-            }
+            if (abortRef.current) abortRef.current.abort();
         };
     }, [query, type, range, startSearch]);
 

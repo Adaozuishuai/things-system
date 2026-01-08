@@ -121,8 +121,8 @@ export function IntelDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Time */}
                     <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-5 space-y-2">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">事件时间</h3>
-                        <p className="text-xl font-medium text-gray-900 dark:text-gray-200">{item.time.split(' ')[0]}</p>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">时间</h3>
+                        <p className="text-xl font-medium text-gray-900 dark:text-gray-200">{item.time}</p>
                     </div>
                     {/* Value Point */}
                     <div className="md:col-span-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg p-5 space-y-2">
@@ -135,18 +135,10 @@ export function IntelDetailPage() {
 
                 {/* 3. Title & Body Section */}
                 <div className="space-y-4 pt-2">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">标题</h3>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">情报内容</h3>
                     <div className="space-y-4">
-                        <p className="text-lg text-gray-900 dark:text-gray-200 font-medium leading-relaxed">
-                            {item.title}
-                        </p>
-                        {/* If we had separate body content, it would go here. For now, we can omit or show summary again if needed. 
-                            The design shows text below title. Assuming it's the full content. 
-                            Since we only have summary, we will display the summary here as well if it's long, or leave it blank if value point covers it.
-                            Let's display the summary again but formatted as body text to fill the space like the design.
-                        */}
-                         <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {item.summary}
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                            {item.content || item.summary}
                         </p>
                     </div>
                 </div>
