@@ -2,7 +2,7 @@ import { useIntelQuery } from '@/hooks/useIntelQuery';
 import { useGlobalIntel } from '@/hooks/useGlobalIntel';
 import { Toolbar } from '@/components/intel/Toolbar';
 import { IntelList } from '@/components/intel/IntelList';
-import { Loader2, Search, X } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export function IntelPage() {
@@ -11,6 +11,7 @@ export function IntelPage() {
         answer,
         status,
         progress,
+        query,
         type, setType,
         range, setRange,
         setQuery,
@@ -22,24 +23,18 @@ export function IntelPage() {
 
     const { items: liveItems, status: liveStatus, toggleFavorite: toggleLiveFavorite } = useGlobalIntel(type === 'hot');
 
-    const [historySearchOpen, setHistorySearchOpen] = useState(false);
     const [historySearchValue, setHistorySearchValue] = useState('');
     const historySearchInputRef = useRef<HTMLInputElement | null>(null);
 
     const handleTabChange = (tab: typeof type) => {
         setType(tab);
-        if (tab === 'history') {
-            setHistorySearchOpen(true);
-        } else {
-            setHistorySearchOpen(false);
-        }
     };
 
     useEffect(() => {
-        if (!historySearchOpen) return;
+        if (type !== 'history') return;
         const t = window.setTimeout(() => historySearchInputRef.current?.focus(), 0);
         return () => window.clearTimeout(t);
-    }, [historySearchOpen]);
+    }, [type]);
 
     const submitHistorySearch = () => {
         setQuery(historySearchValue);
@@ -74,7 +69,7 @@ export function IntelPage() {
                 <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm mx-6 mt-6">
                     <h3 className="text-sm font-bold text-blue-800 dark:text-blue-200 uppercase tracking-wide mb-2 flex items-center gap-2">
                         <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                        智能综述
+                        {type === 'history' ? (historySearchValue || query || '') : '智能综述'}
                     </h3>
                     <p className="text-gray-800 dark:text-gray-200 leading-relaxed">
                         {answer}
@@ -98,14 +93,14 @@ export function IntelPage() {
                             <div
                                 className={[
                                     "relative z-20 overflow-hidden transition-all duration-300 ease-out",
-                                    type === 'history' && historySearchOpen ? "max-h-28" : "max-h-0",
+                                    type === 'history' ? "max-h-28" : "max-h-0",
                                 ].join(' ')}
                             >
                                 <div
                                     className={[
                                         "px-6 md:px-8 pt-3 pb-4",
                                         "transition-all duration-300 ease-out",
-                                        type === 'history' && historySearchOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2",
+                                        type === 'history' ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2",
                                     ].join(' ')}
                                 >
                                     <form
@@ -136,15 +131,6 @@ export function IntelPage() {
                                                 className="h-11 px-5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm font-medium"
                                             >
                                                 搜索
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setHistorySearchOpen(false)}
-                                                className="h-11 w-11 rounded-full bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors border border-gray-200 dark:border-slate-600 flex items-center justify-center"
-                                                aria-label="关闭"
-                                            >
-                                                <X size={18} />
                                             </button>
                                         </div>
                                     </form>
