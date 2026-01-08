@@ -21,7 +21,7 @@ export interface IntelListResponse {
 }
 
 export interface AgentSearchResponse {
-    items: IntelItem[];
+    sources: IntelItem[];
     answer?: string;
 }
 

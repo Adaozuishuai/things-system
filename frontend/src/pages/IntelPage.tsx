@@ -20,7 +20,7 @@ export function IntelPage() {
         handleExport
     } = useIntelQuery();
 
-    const { items: liveItems, status: liveStatus, toggleFavorite: toggleLiveFavorite } = useGlobalIntel();
+    const { items: liveItems, status: liveStatus, toggleFavorite: toggleLiveFavorite } = useGlobalIntel(type === 'hot');
 
     // Determine which items to show
     const items = type === 'hot' ? liveItems : searchItems;

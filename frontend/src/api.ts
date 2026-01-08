@@ -3,6 +3,12 @@ import { IntelListResponse, SearchType, TimeRange, IntelItem as IntelItemType } 
 
 // 处理 Vite 环境下 import.meta.env 可能不存在的情况
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api';
+const SSE_BASE =
+    typeof API_BASE === 'string' && API_BASE.startsWith('http')
+        ? API_BASE
+        : (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV)
+            ? 'http://localhost:8000/api'
+            : API_BASE;
 
 const api = axios.create({
     baseURL: API_BASE,
@@ -77,11 +83,11 @@ export const runAgentTask = async (query: string, type: SearchType, range: TimeR
 };
 
 export const getAgentStreamUrl = (taskId: string) => {
-    return `${API_BASE}/agent/stream/${taskId}`;
+    return `${SSE_BASE}/agent/stream/${taskId}`;
 };
 
 export const getGlobalStreamUrl = () => {
-    return `${API_BASE}/agent/stream/global`;
+    return `${SSE_BASE}/agent/stream/global`;
 };
 
 export const exportIntel = async (ids: string[], type: SearchType, range: TimeRange, q: string) => {

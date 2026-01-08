@@ -33,6 +33,8 @@ class IntelItem(BaseModel):
     tags: List[Tag]
     favorited: bool = False
     is_hot: bool = False # Internal flag for mock data separation
+    content: Optional[str] = None # Full translated content
+    thing_id: Optional[str] = None # CMS thingId
 
     @staticmethod
     def create_tags(regional_country: List[str] = [], domain: List[str] = []) -> List[Tag]:
@@ -121,7 +123,7 @@ class IntelListResponse(BaseModel):
     total: int
 
 class FavoriteToggleRequest(BaseModel):
-    intel_id: str
+    intel_id: Optional[str] = None
     favorited: bool
 
 class ExportRequest(BaseModel):

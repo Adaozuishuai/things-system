@@ -25,6 +25,7 @@ class PayloadPoller(BasePoller):
         self.session: Optional[aiohttp.ClientSession] = None
         self.token: Optional[str] = None
         self.last_fetched_ids: set = set()
+        self.last_cleanup_time: float = 0 # Timestamp of last DB cleanup
 
     def configure(self, cms_url: str, collection_slug: str, email: str, password: str, user_collection: str = "users", interval: int = 10):
         self.cms_url = cms_url.rstrip('/')
@@ -71,6 +72,21 @@ class PayloadPoller(BasePoller):
             return False
 
     async def _poll_step(self):
+        # 0. Daily DB Cleanup
+        now = datetime.now().timestamp()
+        if now - self.last_cleanup_time > 86400: # 24 hours
+            self.logger.info("Running daily DB cleanup...")
+            db = SessionLocal()
+            try:
+                deleted = crud.delete_old_intel_items(db, days=30)
+                if deleted > 0:
+                    self.logger.info(f"Cleaned up {deleted} old items.")
+                self.last_cleanup_time = now
+            except Exception as e:
+                self.logger.error(f"Cleanup failed: {e}")
+            finally:
+                db.close()
+
         # Initial login if needed
         if not self.token:
             if not await self._login():
@@ -135,9 +151,17 @@ class PayloadPoller(BasePoller):
 
         self.logger.info(f"Processing {len(new_docs)} new items...")
 
-        # 2. Refine items using LLM (Concurrent)
-        tasks = []
+        # 2. Refine items using LLM (Concurrent with limit)
+        # SKIP LLM Refinement - Direct Pass Through
+        refined_item_dicts = []
+        
         for doc in new_docs:
+            # DEBUG: Log keys to check availability of thingId and url
+            if len(refined_item_dicts) == 0: # Only log once per batch
+                self.logger.info(f"Doc keys: {list(doc.keys())}")
+                self.logger.info(f"Doc thingId: {doc.get('thingId')}")
+                self.logger.info(f"Doc url: {doc.get('url')}")
+
             # Pre-map to dict structure expected by Orchestrator
             # We keep 'original' for context if available
             raw_item_dict = {
@@ -145,39 +169,54 @@ class PayloadPoller(BasePoller):
                 "title": doc.get("title") or "Untitled",
                 "summary": doc.get("summary") or doc.get("description") or "",
                 "original": doc.get("original") or doc.get("content") or "",
+                "content": doc.get("original") or doc.get("content") or "", # Map original content to content field
                 "tags": [], # Will be filled by Refiner
+                "thingId": doc.get("thingId"),
                 # Pass through other fields needed for mapping later
                 "publishDate": doc.get("publishDate") or doc.get("createdAt"),
                 "source": doc.get("author") or "PayloadCMS",
-                "url": f"{self.cms_url}/admin/collections/{self.collection_slug}/{doc.get('id')}",
+                "url": doc.get("url") or f"{self.cms_url}/admin/collections/{self.collection_slug}/{doc.get('id')}",
                 # Pass through custom CMS fields so they are available in _dict_to_intel_item
                 "regional_country": doc.get("regional_country"),
                 "domain": doc.get("domain"),
                 "topicType": doc.get("topicType")
             }
-            tasks.append(orchestrator.refine_intel_item(raw_item_dict))
+            # Directly use raw item without LLM refinement
+            refined_item_dicts.append(raw_item_dict)
         
-        # Execute refinement concurrently
-        refined_item_dicts = await asyncio.gather(*tasks)
+        # Execute refinement concurrently with limit
+        # refined_item_dicts = await asyncio.gather(*tasks)
 
         # 3. Save and Broadcast
         new_items_count = 0
         db = SessionLocal()
         try:
             for item_dict in refined_item_dicts:
+                self.logger.info(f"Preparing to save item: {item_dict.get('id')}")
+                
                 # Convert dict back to IntelItem model
                 item = self._dict_to_intel_item(item_dict)
                 if not item:
+                    self.logger.error(f"Failed to map item {item_dict.get('id')} to IntelItem model")
                     continue
 
                 # Save to Database
                 try:
                     existing = crud.get_intel_by_id(db, item.id)
                     if not existing:
+                        self.logger.info(f"Creating new item: {item.id}")
                         crud.create_intel_item(db, item)
                         new_items_count += 1
                         # Broadcast
                         await orchestrator.broadcast("new_intel", item.model_dump())
+                    else:
+                        self.logger.info(f"Updating existing item: {item.id}")
+                        # Update existing item if needed (e.g. backfilling content)
+                        # We only update if the new item has content and the existing one might not
+                        # Or just always update to be safe with latest refinement logic
+                        crud.update_intel_item(db, item)
+                        # Optional: Broadcast update event?
+                        # await orchestrator.broadcast("update_intel", item.model_dump())
                 except Exception as e:
                     self.logger.error(f"Error saving item {item.id} to DB: {e}")
         finally:
@@ -185,6 +224,10 @@ class PayloadPoller(BasePoller):
         
         if new_items_count > 0:
             self.logger.info(f"Refined and broadcasted {new_items_count} new items")
+
+    async def _refine_with_semaphore(self, raw_item_dict: Dict[str, Any], semaphore: asyncio.Semaphore) -> Dict[str, Any]:
+        async with semaphore:
+            return await orchestrator.refine_intel_item(raw_item_dict)
 
     def _dict_to_intel_item(self, data: Dict[str, Any]) -> Optional[IntelItem]:
         try:
@@ -247,76 +290,14 @@ class PayloadPoller(BasePoller):
                 timestamp=timestamp,
                 tags=tags,
                 favorited=False,
-                is_hot=True
+                is_hot=True,
+                content=str(data.get("content")) if data.get("content") else None,
+                thing_id=str(data.get("thingId")) if data.get("thingId") else None
             )
         except Exception as e:
             self.logger.error(f"Error mapping dict to IntelItem: {e}")
             return None
-        try:
-            # Flexible mapping based on common fields
-            title = doc.get("title") or doc.get("name") or "Untitled"
-            summary = doc.get("summary") or doc.get("description") or doc.get("content") or ""
-            if isinstance(summary, dict): # Handle rich text or JSON content
-                summary = json.dumps(summary)
-            
-            # Truncate summary
-            summary = str(summary)[:200]
-            
-            # Date handling
-            date_str = doc.get("createdAt") or doc.get("updatedAt") or datetime.now().isoformat()
-            try:
-                # Handle ISO format
-                dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                display_time = dt.strftime("%Y/%m/%d %H:%M")
-                timestamp = dt.timestamp()
-            except:
-                dt = datetime.now()
-                display_time = dt.strftime("%Y/%m/%d %H:%M")
-                timestamp = dt.timestamp()
 
-            # Tags handling
-            tags = []
-            # Check for explicit tags field
-            doc_tags = doc.get("tags", [])
-            if isinstance(doc_tags, list):
-                for t in doc_tags:
-                    if isinstance(t, str):
-                        tags.append(Tag(label=t, color="blue"))
-                    elif isinstance(t, dict) and "name" in t:
-                        tags.append(Tag(label=t["name"], color="blue"))
-
-            # Check for regional/domain fields (from user's previous request context)
-            if "regional_country" in doc:
-                rc = doc["regional_country"]
-                if isinstance(rc, list):
-                    for c in rc:
-                        tags.append(Tag(label=str(c), color="red"))
-                elif isinstance(rc, str):
-                    tags.append(Tag(label=rc, color="red"))
-            
-            if "domain" in doc:
-                dm = doc["domain"]
-                if isinstance(dm, list):
-                    for d in dm:
-                        tags.append(Tag(label=str(d), color="blue"))
-                elif isinstance(dm, str):
-                    tags.append(Tag(label=dm, color="blue"))
-
-            return IntelItem(
-                id=str(doc.get("id", uuid.uuid4())),
-                title=str(title),
-                summary=str(summary),
-                source="PayloadCMS",
-                url=f"{self.cms_url}/admin/collections/{self.collection_slug}/{doc.get('id')}",
-                time=display_time,
-                timestamp=timestamp,
-                tags=tags,
-                favorited=False,
-                is_hot=True # Mark as hot for the "Today's Hotspot" tab
-            )
-        except Exception as e:
-            self.logger.error(f"Error mapping doc to item: {e}")
-            return None
 
 # Global instance
 payload_poller = PayloadPoller()

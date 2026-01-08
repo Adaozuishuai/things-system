@@ -3,7 +3,7 @@ import { IntelItem as IntelItemType } from '@/types';
 import { IntelItem } from './IntelItem';
 
 interface IntelListProps {
-    items: IntelItemType[];
+    items?: IntelItemType[];
     loading: boolean;
     onToggleFavorite: (id: string, current: boolean) => void;
     selectedIds: Set<string>;
@@ -12,7 +12,8 @@ interface IntelListProps {
 }
 
 export function IntelList({ items, loading, onToggleFavorite, selectedIds, onSelect, header }: IntelListProps) {
-    if (loading && items.length === 0) {
+    const safeItems = items ?? [];
+    if (loading && safeItems.length === 0) {
         return (
             <div className="flex flex-col h-full bg-white dark:bg-slate-900">
                 {header}
@@ -23,7 +24,7 @@ export function IntelList({ items, loading, onToggleFavorite, selectedIds, onSel
         );
     }
 
-    if (items.length === 0) {
+    if (safeItems.length === 0) {
         return (
             <div className="flex flex-col h-full bg-white dark:bg-slate-900">
                 {header}
@@ -38,7 +39,7 @@ export function IntelList({ items, loading, onToggleFavorite, selectedIds, onSel
         <Virtuoso
             style={{ height: '100%' }}
             className="bg-white dark:bg-slate-900"
-            data={items}
+            data={safeItems}
             components={{
                 Header: () => <>{header}</>
             }}

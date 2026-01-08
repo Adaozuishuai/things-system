@@ -2,12 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { IntelItem } from '@/types';
 import { getGlobalStreamUrl, toggleFavorite as apiToggleFavorite } from '@/api';
 
-export function useGlobalIntel() {
+export function useGlobalIntel(enabled: boolean = true) {
     const [items, setItems] = useState<IntelItem[]>([]);
     const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
     const eventSourceRef = useRef<EventSource | null>(null);
+    const isClosingRef = useRef(false);
 
     useEffect(() => {
+        if (!enabled) {
+            if (eventSourceRef.current) {
+                isClosingRef.current = true;
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
+            return;
+        }
+
+        isClosingRef.current = false;
         const url = getGlobalStreamUrl();
         const es = new EventSource(url);
         eventSourceRef.current = es;
@@ -17,11 +28,14 @@ export function useGlobalIntel() {
             setStatus('connected');
         };
 
-        es.onerror = (err) => {
-            console.error("Global stream error", err);
-            setStatus('error');
-            // Do not close, let it reconnect
-            // es.close(); 
+        es.onerror = () => {
+            if (isClosingRef.current) {
+                return;
+            }
+            if (es.readyState === EventSource.CLOSED) {
+                return;
+            }
+            setStatus('connecting');
         };
 
         // Listen for initial batch history
@@ -51,10 +65,11 @@ export function useGlobalIntel() {
 
         return () => {
             if (eventSourceRef.current) {
+                isClosingRef.current = true;
                 eventSourceRef.current.close();
             }
         };
-    }, []);
+    }, [enabled]);
 
     const toggleFavorite = async (id: string, current: boolean) => {
         try {

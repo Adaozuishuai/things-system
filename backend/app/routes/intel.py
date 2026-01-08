@@ -121,9 +121,9 @@ async def get_intel_detail(id: str, db: Session = Depends(get_db)):
     )
 
 @router.post("/ingest")
-async def ingest_kafka_payload(payload: KafkaPayload):
+async def ingest_kafka_payload(payload: KafkaPayload, db: Session = Depends(get_db)):
     """
-    Ingest data from Kafka payload directly without DB storage.
+    Ingest data from Kafka payload directly, save to DB, and broadcast.
     Broadcasts to connected clients via SSE.
     """
     # Adapt Payload to IntelItem
@@ -153,13 +153,17 @@ async def ingest_kafka_payload(payload: KafkaPayload):
         timestamp=datetime.now().timestamp(),
         tags=tags,
         favorited=False,
-        is_hot=False
+        is_hot=False,
+        content=payload.original # Save original content
     )
+    
+    # Save to DB
+    crud.create_intel_item(db, item)
     
     # Broadcast to global stream
     await orchestrator.broadcast("new_intel", item.model_dump())
     
-    return {"status": "broadcasted", "item_id": item.id}
+    return {"status": "saved_and_broadcasted", "item_id": item.id}
 
 @router.post("/{id}/favorite")
 async def toggle_favorite(id: str, req: FavoriteToggleRequest, db: Session = Depends(get_db)):

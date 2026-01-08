@@ -60,7 +60,7 @@ export function useIntelQuery() {
             es.addEventListener('result', (event) => {
                 const messageEvent = event as MessageEvent;
                 const data: AgentSearchResponse = JSON.parse(messageEvent.data);
-                setItems(data.items);
+                setItems(data.sources ?? []);
                 setAnswer(data.answer || null);
             });
 

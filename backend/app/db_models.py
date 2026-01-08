@@ -29,6 +29,8 @@ class IntelItemDB(Base):
     tags = Column(JSON, default=list)
     is_hot = Column(Boolean, default=False)
     favorited = Column(Boolean, default=False)
+    content = Column(Text, nullable=True) # Full translated content
+    thing_id = Column(String, nullable=True) # Original CMS thingId
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class UserDB(Base):

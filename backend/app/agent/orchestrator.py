@@ -11,6 +11,11 @@ from app import crud, db_models
 from app.agent import config as agent_config
 from app.agent.agents import AnalystAgent, DataExtractorAgent, RefinementAgent
 
+import os
+from dotenv import load_dotenv
+
+# Load env vars immediately
+load_dotenv()
 # AgentScope 导入部分
 # 尝试导入 AgentScope 库，如果环境未安装则设置标志位，避免程序崩溃
 try:
@@ -121,13 +126,13 @@ class AgentOrchestrator:
             
             # 2. 直接初始化 DashScope 模型实例
             # 从 config 中获取配置，或直接使用默认值
-            model_config_name = "dashscope-chat"
             dashscope_model = DashScopeChatModel(
-                config_name=model_config_name,
+                config_name="dashscope-chat",
                 model_name="qwen-max", # 使用通义千问 Max 模型
-                api_key=agent_config.DASHSCOPE_API_KEY, # 从环境变量或 config 获取
+                api_key=os.getenv("DASHSCOPE_API_KEY"), # 从环境变量或 config 获取
                 generate_args={
-                    "temperature": 0.5, # 控制生成的随机性
+                    "temperature": 0.5,
+                    "stream": True, # 开启流式输出
                 }
             )
 
@@ -229,9 +234,9 @@ class AgentOrchestrator:
         try:
             # Construct Input Prompt
             original_text = item_dict.get("original", "")
-            # Truncate original text to avoid token overflow (e.g. 2000 chars)
-            if len(original_text) > 2000:
-                original_text = original_text[:2000] + "...(truncated)"
+            # Truncate original text to avoid token overflow (e.g. 10000 chars)
+            if len(original_text) > 10000:
+                original_text = original_text[:10000] + "...(truncated)"
                 
             input_text = f"""
             Title: {item_dict.get('title')}
@@ -253,6 +258,8 @@ class AgentOrchestrator:
                     item_dict["title"] = refined_data["title"]
                 if "summary" in refined_data:
                     item_dict["summary"] = refined_data["summary"]
+                if "content" in refined_data:
+                    item_dict["content"] = refined_data["content"]
                 if "tags" in refined_data:
                     # refined_data["tags"] should be a list of dicts {"label": "x", "color": "y"}
                     # We need to ensure it matches what frontend expects or backend model expects.

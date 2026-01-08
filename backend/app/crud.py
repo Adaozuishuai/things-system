@@ -75,12 +75,31 @@ def create_intel_item(db: Session, item: IntelItem):
         timestamp=item.timestamp,
         tags=tags_list,
         is_hot=item.is_hot,
-        favorited=item.favorited
+        favorited=item.favorited,
+        content=item.content # Ensure content is saved
     )
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
     return db_item
+
+def update_intel_item(db: Session, item: IntelItem):
+    """
+    更新现有的情报条目。
+    """
+    db_item = db.query(db_models.IntelItemDB).filter(db_models.IntelItemDB.id == item.id).first()
+    if db_item:
+        db_item.title = item.title
+        db_item.summary = item.summary
+        db_item.content = item.content
+        db_item.thing_id = item.thing_id
+        db_item.tags = [t.label for t in item.tags]
+        # Don't update favorited status to preserve user choice
+        # db_item.favorited = item.favorited 
+        db.commit()
+        db.refresh(db_item)
+        return db_item
+    return None
 
 def get_intel_by_id(db: Session, item_id: str):
     """
@@ -161,7 +180,9 @@ def get_filtered_intel(
                 timestamp=item.timestamp,
                 tags=tags,
                 favorited=item.favorited,
-                is_hot=item.is_hot
+                is_hot=item.is_hot,
+                content=item.content,
+                thing_id=item.thing_id
             )
         )
 
@@ -269,7 +290,9 @@ def get_by_ids(db: Session, ids: List[str]):
                 timestamp=item.timestamp,
                 tags=tags,
                 favorited=item.favorited,
-                is_hot=item.is_hot
+                is_hot=item.is_hot,
+                content=item.content,
+                thing_id=item.thing_id
             )
         )
     return pydantic_items
@@ -280,3 +303,17 @@ def clear_intel_items(db: Session):
     """
     db.query(db_models.IntelItemDB).delete()
     db.commit()
+
+def delete_old_intel_items(db: Session, days: int = 30) -> int:
+    """
+    Delete intel items older than 'days'.
+    Returns number of deleted items.
+    """
+    cutoff_ts = datetime.now().timestamp() - (days * 86400)
+    # Don't delete favorites!
+    deleted_count = db.query(db_models.IntelItemDB).filter(
+        db_models.IntelItemDB.timestamp < cutoff_ts,
+        db_models.IntelItemDB.favorited == False
+    ).delete()
+    db.commit()
+    return deleted_count

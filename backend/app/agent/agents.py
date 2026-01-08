@@ -271,13 +271,13 @@ class RefinementAgent(DataExtractorAgent):
         self.sys_prompt = """
         You are an elite Intelligence Analyst. Your task is to REFINE a single piece of raw intelligence data.
 
-        INPUT: A raw text containing 'title', 'summary', and 'original' text segments. The input may be noisy (e.g., contains weather forecasts, ads, or unrelated lists).
+        INPUT: A raw text containing 'title', 'summary', and 'original' text segments.
 
         TASK:
-        1. **Denoise**: Ignore unrelated content (e.g., "Weather Forecast", "Recommended", unrelated news headlines in the original text). Focus ONLY on the main event described in the title/summary.
-        2. **Translation**: Translate the Title and Summary into professional Simplified Chinese.
-        3. **Summary Rewrite**: Write a concise, high-value summary (max 200 chars) in Chinese. Focus on the core event (Who, What, Where, Why).
-        4. **Smart Tagging**: Extract relevant tags.
+        1. **Title**: Translate the 'Title' into professional Simplified Chinese.
+        2. **Summary**: Translate the provided 'Summary' into Simplified Chinese. Do NOT summarize the 'Original Text'. JUST translate the 'Summary' field provided in input.
+        3. **Full Content**: Translate the ENTIRE 'Original Text Snippet' into Simplified Chinese. Maintain the original length, tone, and details.
+        4. **Smart Tagging**: Extract relevant tags from the content.
            - **Countries/Regions**: MUST be colored "red" (e.g., {"label": "美国", "color": "red"}).
            - **Domains**: MUST be colored "blue" (e.g., {"label": "军事安全", "color": "blue"}, {"label": "政治外交", "color": "blue"}).
            - **Keywords**: Can be colored "gray".
@@ -285,7 +285,8 @@ class RefinementAgent(DataExtractorAgent):
         OUTPUT FORMAT (Strict JSON):
         {
             "title": "精炼后的中文标题",
-            "summary": "精炼后的中文摘要...",
+            "summary": "翻译后的中文摘要 (对应输入的 Summary 字段)",
+            "content": "全文翻译后的内容 (对应输入的 Original Text Snippet 字段)...",
             "tags": [
                 {"label": "美国", "color": "red"},
                 {"label": "委内瑞拉", "color": "red"},
@@ -295,8 +296,6 @@ class RefinementAgent(DataExtractorAgent):
         
         CRITICAL: 
         - Output ONLY valid JSON.
-        - Do NOT wrap in markdown code blocks.
-        - Ensure all text is in Simplified Chinese.
         """
 
     async def reply(self, x: Optional[Union[Msg, str]] = None) -> Msg:
@@ -315,17 +314,19 @@ class RefinementAgent(DataExtractorAgent):
             # Try to extract title from input (assuming input format "Title: ... Summary: ...")
             title_match = re.search(r"Title:\s*(.*?)\n", content)
             summary_match = re.search(r"Summary:\s*(.*?)\n", content)
+            original_match = re.search(r"Original Text Snippet:\s*([\s\S]*)", content)
             
             title = title_match.group(1).strip() if title_match else "未知标题"
             summary = summary_match.group(1).strip() if summary_match else "暂无摘要"
+            original_text = original_match.group(1).strip() if original_match else content
             
             # Simulated Translation & Tagging
             mock_json = {
                 "title": title,
                 "summary": f"{summary}",
+                "content": original_text, # Fallback to extracted original content
                 "tags": [
-                    {"label": "国家", "color": "red"},
-                    {"label": "标题", "color": "gray"}
+                    {"label": "系统降级", "color": "gray"}
                 ]
             }
             
