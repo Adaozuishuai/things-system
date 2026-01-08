@@ -27,7 +27,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => {
+    const stored = localStorage.getItem('token');
+    if (!stored || stored === 'null' || stored === 'undefined') return null;
+    return stored;
+  });
 
   const applyTheme = (theme: string) => {
     const root = window.document.documentElement;
@@ -55,6 +59,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         applyTheme(userData.preferences.theme);
       }
     } catch (error) {
+      const status = (error as any)?.response?.status;
+      if (status === 401 || status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        setAuthToken(null);
+        setToken(null);
+        setUser(null);
+        return;
+      }
       console.error("Failed to fetch user info", error);
     }
   }, [token]);

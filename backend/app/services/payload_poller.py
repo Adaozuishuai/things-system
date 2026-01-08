@@ -187,43 +187,21 @@ class PayloadPoller(BasePoller):
         # Execute refinement concurrently with limit
         # refined_item_dicts = await asyncio.gather(*tasks)
 
-        # 3. Save and Broadcast
-        new_items_count = 0
-        db = SessionLocal()
-        try:
-            for item_dict in refined_item_dicts:
-                self.logger.info(f"Preparing to save item: {item_dict.get('id')}")
-                
-                # Convert dict back to IntelItem model
-                item = self._dict_to_intel_item(item_dict)
-                if not item:
-                    self.logger.error(f"Failed to map item {item_dict.get('id')} to IntelItem model")
-                    continue
+        # 3. Broadcast only (persist to history on detail view)
+        broadcast_count = 0
+        for item_dict in refined_item_dicts:
+            self.logger.info(f"Preparing to broadcast item: {item_dict.get('id')}")
 
-                # Save to Database
-                try:
-                    existing = crud.get_intel_by_id(db, item.id)
-                    if not existing:
-                        self.logger.info(f"Creating new item: {item.id}")
-                        crud.create_intel_item(db, item)
-                        new_items_count += 1
-                        # Broadcast
-                        await orchestrator.broadcast("new_intel", item.model_dump())
-                    else:
-                        self.logger.info(f"Updating existing item: {item.id}")
-                        # Update existing item if needed (e.g. backfilling content)
-                        # We only update if the new item has content and the existing one might not
-                        # Or just always update to be safe with latest refinement logic
-                        crud.update_intel_item(db, item)
-                        # Optional: Broadcast update event?
-                        # await orchestrator.broadcast("update_intel", item.model_dump())
-                except Exception as e:
-                    self.logger.error(f"Error saving item {item.id} to DB: {e}")
-        finally:
-            db.close()
-        
-        if new_items_count > 0:
-            self.logger.info(f"Refined and broadcasted {new_items_count} new items")
+            item = self._dict_to_intel_item(item_dict)
+            if not item:
+                self.logger.error(f"Failed to map item {item_dict.get('id')} to IntelItem model")
+                continue
+
+            await orchestrator.broadcast("new_intel", item.model_dump())
+            broadcast_count += 1
+
+        if broadcast_count > 0:
+            self.logger.info(f"Broadcasted {broadcast_count} new items")
 
     async def _refine_with_semaphore(self, raw_item_dict: Dict[str, Any], semaphore: asyncio.Semaphore) -> Dict[str, Any]:
         async with semaphore:

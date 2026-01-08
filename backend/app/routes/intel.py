@@ -103,10 +103,43 @@ async def export_intel(req: ExportRequest, db: Session = Depends(get_db)):
 async def get_intel_detail(id: str, db: Session = Depends(get_db)):
     item = crud.get_intel_by_id(db, id)
     if not item:
-        raise HTTPException(status_code=404, detail="Intel item not found")
+        cached = orchestrator.get_cached_intel(id)
+        if not cached:
+            raise HTTPException(status_code=404, detail="Intel item not found")
+
+        tags = []
+        for t in cached.get("tags") or []:
+            if isinstance(t, dict):
+                tags.append(Tag(label=t.get("label", ""), color=t.get("color", "blue")))
+            else:
+                tags.append(Tag(label=str(t), color="blue"))
+
+        intel_item = IntelItem(
+            id=str(cached.get("id", id)),
+            title=cached.get("title") or "",
+            summary=cached.get("summary") or "",
+            source=cached.get("source") or "Hot Stream",
+            url=cached.get("url"),
+            time=cached.get("time") or "",
+            timestamp=float(cached.get("timestamp") or datetime.now().timestamp()),
+            tags=tags,
+            favorited=bool(cached.get("favorited") or False),
+            is_hot=False,
+            content=cached.get("content"),
+            thing_id=cached.get("thing_id") or cached.get("thingId")
+        )
+
+        if not crud.get_intel_by_id(db, intel_item.id):
+            crud.create_intel_item(db, intel_item)
+
+        return intel_item
     
-    # Convert DB model to Pydantic model, handling tags conversion
-    tags = [Tag(label=t, color="blue") for t in item.tags] if item.tags else []
+    tags = []
+    for t in item.tags or []:
+        if isinstance(t, dict):
+            tags.append(Tag(label=str(t.get("label", "")), color=str(t.get("color", "blue"))))
+        else:
+            tags.append(Tag(label=str(t), color="blue"))
     return IntelItem(
         id=item.id,
         title=item.title,
@@ -117,7 +150,9 @@ async def get_intel_detail(id: str, db: Session = Depends(get_db)):
         timestamp=item.timestamp,
         tags=tags,
         favorited=item.favorited,
-        is_hot=item.is_hot
+        is_hot=item.is_hot,
+        content=item.content,
+        thing_id=item.thing_id
     )
 
 @router.post("/ingest")
@@ -153,17 +188,14 @@ async def ingest_kafka_payload(payload: KafkaPayload, db: Session = Depends(get_
         timestamp=datetime.now().timestamp(),
         tags=tags,
         favorited=False,
-        is_hot=False,
+        is_hot=True,
         content=payload.original # Save original content
     )
-    
-    # Save to DB
-    crud.create_intel_item(db, item)
     
     # Broadcast to global stream
     await orchestrator.broadcast("new_intel", item.model_dump())
     
-    return {"status": "saved_and_broadcasted", "item_id": item.id}
+    return {"status": "broadcasted", "item_id": item.id}
 
 @router.post("/{id}/favorite")
 async def toggle_favorite(id: str, req: FavoriteToggleRequest, db: Session = Depends(get_db)):

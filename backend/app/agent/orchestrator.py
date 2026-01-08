@@ -3,9 +3,9 @@ import uuid
 import json
 import os
 import inspect
-from typing import AsyncGenerator, Dict, Any, List
+from typing import AsyncGenerator, Dict, Any, List, Optional
 from collections import deque
-from app.models import AgentSearchRequest, AgentSearchResponse
+from app.models import AgentSearchRequest, AgentSearchResponse, IntelItem, Tag
 from app.database import SessionLocal
 from app import crud, db_models
 from app.agent import config as agent_config
@@ -28,6 +28,7 @@ except ImportError:
 
 import re
 import json
+from datetime import datetime
 
 def extract_json_from_text(text: str):
     """
@@ -176,6 +177,83 @@ class AgentOrchestrator:
         for q in self.global_queues:
             await q.put(message)
 
+    def _search_global_cache(self, q: str, range_filter: str, limit: int) -> List[IntelItem]:
+        query = (q or "").strip().lower()
+        items: List[IntelItem] = []
+        cutoff: Optional[float] = None
+        if range_filter != "all":
+            now_ts = datetime.now().timestamp()
+            if range_filter == "24h":
+                cutoff = now_ts - 86400
+            elif range_filter == "7d":
+                cutoff = now_ts - 7 * 86400
+            elif range_filter == "30d":
+                cutoff = now_ts - 30 * 86400
+
+        for raw in reversed(self.global_cache):
+            if not isinstance(raw, dict):
+                continue
+            ts = raw.get("timestamp")
+            try:
+                ts_f = float(ts) if ts is not None else None
+            except Exception:
+                ts_f = None
+            if cutoff is not None and ts_f is not None and ts_f < cutoff:
+                continue
+
+            title = str(raw.get("title") or "")
+            summary = str(raw.get("summary") or "")
+            tag_labels = []
+            for t in raw.get("tags") or []:
+                if isinstance(t, dict):
+                    tag_labels.append(str(t.get("label") or ""))
+                else:
+                    tag_labels.append(str(t))
+            haystack = f"{title}\n{summary}\n{' '.join(tag_labels)}".lower()
+            if query and query not in haystack:
+                continue
+
+            tags: List[Tag] = []
+            for t in raw.get("tags") or []:
+                if isinstance(t, dict):
+                    tags.append(Tag(label=str(t.get("label", "")), color=str(t.get("color", "blue"))))
+                else:
+                    tags.append(Tag(label=str(t), color="blue"))
+
+            try:
+                ts_out = float(raw.get("timestamp") or datetime.now().timestamp())
+            except Exception:
+                ts_out = datetime.now().timestamp()
+
+            items.append(
+                IntelItem(
+                    id=str(raw.get("id") or ""),
+                    title=title,
+                    summary=summary,
+                    source=str(raw.get("source") or "Hot Stream"),
+                    url=raw.get("url"),
+                    time=str(raw.get("time") or ""),
+                    timestamp=ts_out,
+                    tags=tags,
+                    favorited=bool(raw.get("favorited") or False),
+                    is_hot=True,
+                    content=raw.get("content"),
+                    thing_id=raw.get("thing_id") or raw.get("thingId")
+                )
+            )
+            if len(items) >= limit:
+                break
+        return items
+
+    def get_cached_intel(self, item_id: str) -> Any:
+        for item in reversed(self.global_cache):
+            try:
+                if isinstance(item, dict) and str(item.get("id")) == str(item_id):
+                    return item
+            except Exception:
+                continue
+        return None
+
     async def run_global_stream(self) -> AsyncGenerator[str, None]:
         """
         Global SSE stream for real-time updates
@@ -301,16 +379,19 @@ class AgentOrchestrator:
                 yield f"event: progress\ndata: {json.dumps({'step': 'init', 'message': 'Initializing AgentScope Analyst...'})}\n\n"
                 
                 # RAG (检索增强生成) 步骤: 从数据库检索相关情报
-                db = SessionLocal()
-                try:
-                    items, _ = crud.get_filtered_intel(
-                        db,
-                        type_filter=req.type or "all",
-                        q=req.query,
-                        limit=5
-                    )
-                finally:
-                    db.close()
+                if (req.type or "all") == "hot":
+                    items = self._search_global_cache(req.query, req.range or "all", limit=5)
+                else:
+                    db = SessionLocal()
+                    try:
+                        items, _ = crud.get_filtered_intel(
+                            db,
+                            type_filter=req.type or "all",
+                            q=req.query,
+                            limit=5
+                        )
+                    finally:
+                        db.close()
                 
                 # 读取外部上下文文件 (data.txt) 如果存在
                 data_txt_content = ""
@@ -375,17 +456,20 @@ class AgentOrchestrator:
             yield f"event: progress\ndata: {json.dumps({'step': step['name'], 'message': step['desc']})}\n\n"
 
         # 3. 执行模拟"搜索" (仅数据库查询)
-        db = SessionLocal()
-        try:
-            items, _ = crud.get_filtered_intel(
-                db,
-                type_filter=req.type or "all",
-                q=req.query,
-                range_filter=req.range or "all",
-                limit=req.top_k
-            )
-        finally:
-            db.close()
+        if (req.type or "all") == "hot":
+            items = self._search_global_cache(req.query, req.range or "all", limit=req.top_k)
+        else:
+            db = SessionLocal()
+            try:
+                items, _ = crud.get_filtered_intel(
+                    db,
+                    type_filter=req.type or "all",
+                    q=req.query,
+                    range_filter=req.range or "all",
+                    limit=req.top_k
+                )
+            finally:
+                db.close()
 
         # 生成模拟回答
         answer = f"Based on the analysis of {len(items)} items, the situation regarding '{req.query}' shows significant activity. Key trends include recent diplomatic moves and economic indicators."

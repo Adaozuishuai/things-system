@@ -6,6 +6,20 @@ from datetime import datetime
 from sqlalchemy import or_
 from typing import List, Optional
 
+def _deserialize_tags(raw_tags) -> List[Tag]:
+    if not raw_tags:
+        return []
+    tags: List[Tag] = []
+    for t in raw_tags:
+        if isinstance(t, dict):
+            tags.append(Tag(label=str(t.get("label", "")), color=str(t.get("color", "blue"))))
+        else:
+            tags.append(Tag(label=str(t), color="blue"))
+    return tags
+
+def _serialize_tags(tags: List[Tag]):
+    return [{"label": t.label, "color": t.color} for t in (tags or [])]
+
 # ===========================
 # 原始数据操作 (Raw Data Operations)
 # ===========================
@@ -62,9 +76,7 @@ def create_intel_item(db: Session, item: IntelItem):
         db: 数据库会话
         item: Pydantic 模型对象 (IntelItem)
     """
-    # 转换 Pydantic 模型到数据库模型
-    tags_list = [t.label for t in item.tags]
-    
+    tags_list = _serialize_tags(item.tags)
     db_item = db_models.IntelItemDB(
         id=item.id,
         title=item.title,
@@ -76,7 +88,8 @@ def create_intel_item(db: Session, item: IntelItem):
         tags=tags_list,
         is_hot=item.is_hot,
         favorited=item.favorited,
-        content=item.content # Ensure content is saved
+        content=item.content,
+        thing_id=item.thing_id
     )
     db.add(db_item)
     db.commit()
@@ -93,7 +106,7 @@ def update_intel_item(db: Session, item: IntelItem):
         db_item.summary = item.summary
         db_item.content = item.content
         db_item.thing_id = item.thing_id
-        db_item.tags = [t.label for t in item.tags]
+        db_item.tags = _serialize_tags(item.tags)
         # Don't update favorited status to preserve user choice
         # db_item.favorited = item.favorited 
         db.commit()
@@ -134,7 +147,8 @@ def get_filtered_intel(
     # 1. 类型筛选 (Type Filter)
     if type_filter == "hot":
         query = query.filter(db_models.IntelItemDB.is_hot == True)
-    # History 默认为所有记录 (History is implied as all)
+    elif type_filter == "history":
+        query = query.filter(db_models.IntelItemDB.is_hot == False)
 
     # 2. 关键词搜索 (Search)
     if q:
@@ -168,7 +182,7 @@ def get_filtered_intel(
     # 将数据库模型转换为 Pydantic 模型以供响应
     pydantic_items = []
     for item in items:
-        tags = [Tag(label=t, color="blue") for t in item.tags] if item.tags else []
+        tags = _deserialize_tags(item.tags)
         pydantic_items.append(
             IntelItem(
                 id=item.id,
@@ -216,7 +230,7 @@ def get_favorites(db: Session, q: Optional[str] = None, limit: int = 20, offset:
     
     pydantic_items = []
     for item in items:
-        tags = [Tag(label=t, color="blue") for t in item.tags] if item.tags else []
+        tags = _deserialize_tags(item.tags)
         pydantic_items.append(
             IntelItem(
                 id=item.id,
@@ -252,7 +266,7 @@ def toggle_favorite(db: Session, item_id: str, favorited: bool):
         item.favorited = favorited
         db.commit()
         # 返回转换后的 Pydantic 对象
-        tags = [Tag(label=t, color="blue") for t in item.tags] if item.tags else []
+        tags = _deserialize_tags(item.tags)
         return IntelItem(
             id=item.id,
             title=item.title,
@@ -278,7 +292,7 @@ def get_by_ids(db: Session, ids: List[str]):
     items = db.query(db_models.IntelItemDB).filter(db_models.IntelItemDB.id.in_(ids)).all()
     pydantic_items = []
     for item in items:
-        tags = [Tag(label=t, color="blue") for t in item.tags] if item.tags else []
+        tags = _deserialize_tags(item.tags)
         pydantic_items.append(
             IntelItem(
                 id=item.id,

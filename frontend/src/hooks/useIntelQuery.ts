@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { IntelItem, SearchType, TimeRange, AgentSearchResponse } from '@/types';
-import { runAgentTask, getAgentStreamUrl, toggleFavorite as apiToggleFavorite, exportIntel } from '@/api';
+import { getIntel, runAgentTask, getAgentStreamUrl, toggleFavorite as apiToggleFavorite, exportIntel } from '@/api';
 
 export function useIntelQuery() {
     const [items, setItems] = useState<IntelItem[]>([]);
@@ -17,10 +17,12 @@ export function useIntelQuery() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const eventSourceRef = useRef<EventSource | null>(null);
+    const isClosingRef = useRef(false);
 
     const startSearch = useCallback(async (q: string, t: SearchType, r: TimeRange) => {
         // Cancel previous stream if any
         if (eventSourceRef.current) {
+            isClosingRef.current = true;
             eventSourceRef.current.close();
         }
 
@@ -30,12 +32,20 @@ export function useIntelQuery() {
         setProgress(null);
 
         try {
+            if (t === 'history' && !q.trim()) {
+                const res = await getIntel('history', '', r, 50, 0);
+                setItems(res.items ?? []);
+                setStatus('done');
+                return;
+            }
+
             const taskId = await runAgentTask(q, t, r);
             
             setStatus('streaming');
             const url = getAgentStreamUrl(taskId);
             const es = new EventSource(url);
             eventSourceRef.current = es;
+            isClosingRef.current = false;
 
             es.onmessage = (_event) => {
                 // Keep-alive or generic message
@@ -45,6 +55,7 @@ export function useIntelQuery() {
                 const messageEvent = event as MessageEvent;
                 const data = JSON.parse(messageEvent.data);
                 if (data.status === 'done') {
+                    isClosingRef.current = true;
                     es.close();
                     setStatus('done');
                     setProgress(null);
@@ -65,12 +76,18 @@ export function useIntelQuery() {
             });
 
             es.addEventListener('error', (event) => {
+                if (isClosingRef.current || es.readyState === EventSource.CLOSED) {
+                    return;
+                }
                 console.error("SSE Error", event);
                 es.close();
                 setStatus('error');
             });
 
             es.onerror = (err) => {
+                if (isClosingRef.current || es.readyState === EventSource.CLOSED) {
+                    return;
+                }
                 console.error("EventSource failed", err);
                 es.close();
                 setStatus('error');
