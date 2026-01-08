@@ -45,7 +45,7 @@ export const getIntel = async (
     limit: number = 20,
     offset: number = 0
 ) => {
-    const res = await api.get<IntelListResponse>('/intel', {
+    const res = await api.get<IntelListResponse>('/intel/', {
         params: { type, q, range, limit, offset }
     });
     return res.data;
