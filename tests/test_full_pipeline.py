@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 # Add backend directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
 
 from app.agent.orchestrator import AgentOrchestrator
 from app.services.payload_poller import PayloadPoller

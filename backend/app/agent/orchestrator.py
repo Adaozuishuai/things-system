@@ -3,7 +3,7 @@ import uuid
 import json
 import os
 import inspect
-from typing import AsyncGenerator, Dict, Any, List, Optional
+from typing import AsyncGenerator, Dict, Any, List, Optional, Tuple
 from collections import deque
 from app.models import AgentSearchRequest, AgentSearchResponse, IntelItem, Tag
 from app.database import SessionLocal
@@ -171,11 +171,31 @@ class AgentOrchestrator:
             print(f"Broadcast {event_type}: No connected clients")
             return
             
-        message = f"event: {event_type}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+        event_id = None
+        if isinstance(data, dict):
+            raw_id = data.get("id")
+            if raw_id is not None:
+                event_id = str(raw_id)
+
+        if event_id:
+            message = f"id: {event_id}\nevent: {event_type}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+        else:
+            message = f"event: {event_type}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
         print(f"Broadcasting {event_type} to {len(self.global_queues)} clients")
         
         for q in self.global_queues:
             await q.put(message)
+
+    def _item_key(self, raw: Any) -> Tuple[float, str]:
+        if not isinstance(raw, dict):
+            return (-1.0, "")
+        try:
+            ts = float(raw.get("timestamp") or -1.0)
+        except Exception:
+            ts = -1.0
+        raw_id = raw.get("id")
+        item_id = "" if raw_id is None else str(raw_id)
+        return (ts, item_id)
 
     def _search_global_cache(self, q: str, range_filter: str, limit: int) -> List[IntelItem]:
         query = (q or "").strip().lower()
@@ -254,7 +274,7 @@ class AgentOrchestrator:
                 continue
         return None
 
-    async def run_global_stream(self) -> AsyncGenerator[str, None]:
+    async def run_global_stream(self, after_ts: Optional[float] = None, after_id: Optional[str] = None) -> AsyncGenerator[str, None]:
         """
         Global SSE stream for real-time updates
         """
@@ -264,9 +284,23 @@ class AgentOrchestrator:
         print(f"Client connected. Total clients: {len(self.global_queues)}")
         
         try:
+            yield "retry: 3000\n\n"
             # 1. Send initial batch from cache
             if self.global_cache:
                 initial_data = list(self.global_cache)
+                cutoff_key: Optional[Tuple[float, str]] = None
+
+                if after_id:
+                    found = self.get_cached_intel(after_id)
+                    if found:
+                        cutoff_key = self._item_key(found)
+
+                if cutoff_key is None and after_ts is not None:
+                    cutoff_key = (float(after_ts), str(after_id or ""))
+
+                if cutoff_key is not None:
+                    initial_data = [x for x in initial_data if self._item_key(x) > cutoff_key]
+
                 yield f"event: initial_batch\ndata: {json.dumps(initial_data, ensure_ascii=False)}\n\n"
             
             # 2. Stream new events

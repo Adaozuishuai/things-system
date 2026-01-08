@@ -5,6 +5,7 @@ import uuid
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend")))
 
 from app.agent.orchestrator import orchestrator
 from app import crud

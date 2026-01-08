@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -16,10 +16,13 @@ async def run_agent(req: AgentSearchRequest):
     return {"task_id": task_id}
 
 @router.get("/stream/global")
-async def stream_global():
+async def stream_global(request: Request, after_ts: float | None = None, after_id: str | None = None):
     print("Agent Router: Received global stream request")
+    last_event_id = request.headers.get("last-event-id") or request.headers.get("Last-Event-ID")
+    if not after_id and last_event_id:
+        after_id = str(last_event_id)
     return StreamingResponse(
-        orchestrator.run_global_stream(),
+        orchestrator.run_global_stream(after_ts=after_ts, after_id=after_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

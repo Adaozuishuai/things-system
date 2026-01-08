@@ -81,8 +81,15 @@ export const getAgentStreamUrl = (taskId: string) => {
     return `${SSE_BASE}/agent/stream/${taskId}`;
 };
 
-export const getGlobalStreamUrl = () => {
-    return `${SSE_BASE}/agent/stream/global`;
+export const getGlobalStreamUrl = (opts?: { after_ts?: number; after_id?: string }) => {
+    const url = new URL(`${SSE_BASE}/agent/stream/global`, window.location.origin);
+    if (opts?.after_ts !== undefined) {
+        url.searchParams.set('after_ts', String(opts.after_ts));
+    }
+    if (opts?.after_id) {
+        url.searchParams.set('after_id', opts.after_id);
+    }
+    return url.toString();
 };
 
 export const exportIntel = async (ids: string[], type: SearchType, range: TimeRange, q: string) => {

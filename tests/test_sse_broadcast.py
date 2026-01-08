@@ -6,6 +6,7 @@ from typing import Optional
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend")))
 
 from app.agent.orchestrator import AgentOrchestrator
 
@@ -20,7 +21,7 @@ async def _read_until_event(agen, event_name: str, timeout_s: float) -> Optional
             msg = await asyncio.wait_for(agen.__anext__(), timeout=remaining)
         except asyncio.TimeoutError:
             return None
-        if msg.startswith(f"event: {event_name}\n"):
+        if f"\nevent: {event_name}\n" in f"\n{msg}":
             return msg
 
 
@@ -41,9 +42,9 @@ async def test_broadcast_new_intel():
 
     agen = orchestrator.run_global_stream()
 
-    initial = await asyncio.wait_for(agen.__anext__(), timeout=2.0)
-    if not initial.startswith("event: initial_batch"):
-        raise AssertionError(f"unexpected first message: {initial[:80]!r}")
+    initial = await _read_until_event(agen, "initial_batch", timeout_s=2.0)
+    if not initial:
+        raise AssertionError("did not receive initial_batch event")
 
     payload = {
         "id": "test-1",
@@ -90,9 +91,9 @@ async def test_broadcast_five_messages():
 
     agen = orchestrator.run_global_stream()
 
-    initial = await asyncio.wait_for(agen.__anext__(), timeout=2.0)
-    if not initial.startswith("event: initial_batch"):
-        raise AssertionError(f"unexpected first message: {initial[:80]!r}")
+    initial = await _read_until_event(agen, "initial_batch", timeout_s=2.0)
+    if not initial:
+        raise AssertionError("did not receive initial_batch event")
 
     payloads = []
     for i in range(5):

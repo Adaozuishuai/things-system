@@ -21,7 +21,7 @@ export function IntelPage() {
         handleExport
     } = useIntelQuery();
 
-    const { items: liveItems, status: liveStatus, toggleFavorite: toggleLiveFavorite } = useGlobalIntel(type === 'hot');
+    const { items: liveItems, status: liveStatus, toggleFavorite: toggleLiveFavorite, reconnect: reconnectLive } = useGlobalIntel(type === 'hot');
 
     const [historySearchValue, setHistorySearchValue] = useState('');
     const historySearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -42,11 +42,59 @@ export function IntelPage() {
 
     // Determine which items to show
     const items = type === 'hot' ? liveItems : searchItems;
-    const isLoading = type === 'hot' ? liveStatus === 'connecting' : status === 'loading';
+    const isLoading = type === 'hot' ? (liveStatus === 'connecting' || liveStatus === 'reconnecting') : status === 'loading';
     const onToggleFavorite = type === 'hot' ? toggleLiveFavorite : handleToggleFavorite;
 
     const headerContent = (
         <>
+            {type === 'hot' && (
+                <div
+                    className={[
+                        "mb-6 p-4 rounded-lg border flex items-center gap-3 mx-6 mt-6",
+                        liveStatus === 'connected'
+                            ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/40"
+                            : liveStatus === 'error'
+                                ? "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/40"
+                                : "bg-blue-50 dark:bg-blue-900/30 border-blue-100 dark:border-blue-800",
+                    ].join(' ')}
+                >
+                    {liveStatus === 'connected' ? (
+                        <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+                    ) : liveStatus === 'error' ? (
+                        <span className="w-2 h-2 rounded-full bg-red-600 dark:bg-red-400" />
+                    ) : (
+                        <Loader2 className="animate-spin text-blue-600 dark:text-blue-400" />
+                    )}
+                    <div className="flex-1 flex items-center justify-between gap-3">
+                        <span
+                            className={[
+                                "font-medium",
+                                liveStatus === 'connected'
+                                    ? "text-emerald-900 dark:text-emerald-100"
+                                    : liveStatus === 'error'
+                                        ? "text-red-900 dark:text-red-100"
+                                        : "text-blue-900 dark:text-blue-100",
+                            ].join(' ')}
+                        >
+                            {liveStatus === 'connected'
+                                ? '推送中'
+                                : liveStatus === 'reconnecting'
+                                    ? '热流重连中...'
+                                    : liveStatus === 'connecting'
+                                        ? '热流连接中...'
+                                        : '热流连接失败'}
+                        </span>
+                        {liveStatus === 'error' && (
+                            <button
+                                onClick={reconnectLive}
+                                className="shrink-0 px-4 py-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm font-medium text-sm"
+                            >
+                                重新连接
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
             {/* Agent Status / Progress - Only show for non-live tabs */}
             {type !== 'hot' && (status === 'loading' || status === 'streaming') && (
                 <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800 flex items-center gap-3 mx-6 mt-6">
