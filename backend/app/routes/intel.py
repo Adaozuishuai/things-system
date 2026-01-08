@@ -1,12 +1,11 @@
 import io
-import uuid
 from datetime import datetime
 from urllib.parse import quote
 from docx import Document
 from fastapi import APIRouter, HTTPException, Response, Depends
 from typing import Optional, Literal
 from sqlalchemy.orm import Session
-from app.models import IntelListResponse, FavoriteToggleRequest, ExportRequest, IntelItem, Tag, KafkaPayload
+from app.models import IntelListResponse, FavoriteToggleRequest, ExportRequest, IntelItem, Tag
 from app.database import get_db
 from app import crud
 from app.agent.orchestrator import orchestrator
@@ -153,48 +152,6 @@ async def get_intel_detail(id: str, db: Session = Depends(get_db)):
         content=item.content,
         thing_id=item.thing_id
     )
-
-@router.post("/ingest")
-async def ingest_kafka_payload(payload: KafkaPayload, db: Session = Depends(get_db)):
-    """
-    Ingest data from Kafka payload directly, save to DB, and broadcast.
-    Broadcasts to connected clients via SSE.
-    """
-    # Adapt Payload to IntelItem
-    tags = []
-    
-    # 1. Regional Country -> Red Tag
-    if payload.regional_country:
-        for country in payload.regional_country:
-            tags.append(Tag(label=country, color="red"))
-            
-    # 2. Domain -> Blue Tag
-    if payload.domain:
-        for domain in payload.domain:
-            tags.append(Tag(label=domain, color="blue"))
-            
-    # Create IntelItem
-    # Use current time if publishDate is not parsable or just use it as string
-    # Assuming publishDate is a string we can just display
-    
-    item = IntelItem(
-        id=str(uuid.uuid4()),
-        title=payload.title,
-        summary=payload.summary or payload.original[:200], # Use original as fallback summary
-        source=payload.author or "API Stream",
-        url=payload.url,
-        time=payload.publishDate,
-        timestamp=datetime.now().timestamp(),
-        tags=tags,
-        favorited=False,
-        is_hot=True,
-        content=payload.original # Save original content
-    )
-    
-    # Broadcast to global stream
-    await orchestrator.broadcast("new_intel", item.model_dump())
-    
-    return {"status": "broadcasted", "item_id": item.id}
 
 @router.post("/{id}/favorite")
 async def toggle_favorite(id: str, req: FavoriteToggleRequest, db: Session = Depends(get_db)):

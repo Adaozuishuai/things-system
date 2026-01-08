@@ -7,20 +7,6 @@ class Tag(BaseModel):
     label: str
     color: Literal["purple", "blue", "gray", "red"]
 
-class KafkaPayload(BaseModel):
-    id: Optional[int] = None
-    no: Optional[str] = None
-    title: str
-    thingId: Optional[str] = None
-    publishDate: str
-    author: Optional[str] = None
-    summary: Optional[str] = None
-    original: str
-    translation: Optional[str] = None
-    url: Optional[str] = None
-    regional_country: Optional[List[str]] = []
-    domain: Optional[List[str]] = []
-
 
 class IntelItem(BaseModel):
     id: str
@@ -47,23 +33,6 @@ class IntelItem(BaseModel):
             for d in domain:
                 tags.append(Tag(label=d, color="blue"))
         return tags
-
-    @classmethod
-    def from_kafka_payload(cls, payload: KafkaPayload) -> "IntelItem":
-        tags = cls.create_tags(payload.regional_country, payload.domain)
-        
-        return cls(
-            id=str(uuid.uuid4()),
-            title=payload.title,
-            summary=payload.summary or payload.original[:200],
-            source=payload.author or "API Stream",
-            url=payload.url,
-            time=payload.publishDate,
-            timestamp=datetime.now().timestamp(),
-            tags=tags,
-            favorited=False,
-            is_hot=False
-        )
 
     @classmethod
     def from_cms_data(cls, data: Dict[str, Any], current_id: int = 0) -> "IntelItem":
