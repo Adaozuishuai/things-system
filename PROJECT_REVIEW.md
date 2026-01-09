@@ -3,6 +3,10 @@
 ## 1. 系统概述 (System Overview)
 本项目是一个**AI 驱动的实时情报采集与分析平台**。系统从外部数据源（如 Payload CMS）采集情报，通过 SSE 将“热流”推送给前端；同时将“历史/搜索”能力建立在数据库与 Agent（LLM）辅助检索分析之上。
 
+在前端交互层面，“热点”分成两种使用方式：
+*   **热点流 (Hot Stream)**：不依赖搜索词，持续接收后端 SSE 推送的最新热点。
+*   **热点搜索模式 (Hot Search Mode)**：输入搜索词后，搜索结果由“实时 SSE 缓存 + 数据库查询”两路合并、去重、按时间排序，确保**未落库但已通过 SSE 收到的热点**也能被检索到，并且新到达的 SSE 事件会实时刷新结果集。
+
 **核心价值**: 将实时热流与可追溯历史结合，提供自动化、实时化、可视化的情报作业流程。
 
 ---
@@ -58,13 +62,28 @@
 负责数据持久化与对外服务。
 *   **[crud.py](file:///home/system_/system_mvp/backend/app/crud.py)**: 统一的数据库操作入口 (Create, Read, Update, Delete)。
 *   **[db_models.py](file:///home/system_/system_mvp/backend/app/db_models.py)**: 定义 `IntelItem`, `User`, `RawData` 等数据表结构。
-*   **[intel.py](file:///home/system_/system_mvp/backend/app/routes/intel.py)**: 提供情报查询、筛选、收藏等 RESTful 接口；详情接口支持“从热流缓存落库”（点击详情时持久化）。
-*   **[agent.py](file:///home/system_/system_mvp/backend/app/routes/agent.py)**: 提供 Agent 任务创建与 SSE 流式结果（含全局热流 SSE）。
+*   **[intel.py](file:///home/system_/system_mvp/backend/app/routes/intel.py)**: 提供情报查询、详情、收藏、导出等 RESTful 接口。
+    *   列表检索：`GET /intel/?type=hot|history|all&q=...&range=...`，热点搜索模式会用它拉取“已落库热点”作为数据库侧结果集。
+    *   详情：`GET /intel/{id}` 优先读库；未落库则从编排器热流缓存取回并写入数据库（保证详情可追溯）。
+    *   收藏：`POST /intel/{id}/favorite` 优先更新数据库；未落库则从热流缓存构造条目并入库后再更新收藏。
+    *   导出：`POST /intel/export` 支持按 ID 列表导出；缺失条目会尝试从热流缓存补齐并入库后导出。
+*   **[agent.py](file:///home/system_/system_mvp/backend/app/routes/agent.py)**: 提供 Agent 任务创建与 SSE 流式结果（含全局热流 SSE：`GET /agent/stream/global`）。
 
 ### 3.5 前端展示层 (Presentation Layer)
 负责数据的可视化呈现与交互。
 *   **[IntelList.tsx](file:///home/system_/system_mvp/frontend/src/components/intel/IntelList.tsx)**: 核心组件，支持大数据量虚拟滚动与实时更新动画。
 *   **[useGlobalIntel.ts](file:///home/system_/system_mvp/frontend/src/hooks/useGlobalIntel.ts)**: 自定义 Hook，封装 SSE 连接逻辑，实现数据实时同步。
+    *   连接端点：`GET /agent/stream/global`（通过 [api.ts](file:///home/system_/system_mvp/frontend/src/api.ts) 的 `getGlobalStreamUrl` 生成 URL）。
+    *   初始同步：接收 `initial_batch` 事件，将服务端 `global_cache` 的最近消息合并进列表。
+    *   增量更新：接收 `new_intel` 事件，将最新条目合并进列表（按 `timestamp` 倒序）。
+    *   断线续传：使用 `after_ts/after_id` 作为游标重连，避免重复推送。
+*   **[IntelPage.tsx](file:///home/system_/system_mvp/frontend/src/pages/IntelPage.tsx)**: 情报主页面，包含“热点流 / 热点搜索模式 / 历史搜索”三种主路径。
+    *   热点流：`type === 'hot'` 且无搜索词时，直接展示 `useGlobalIntel(true)` 的实时列表。
+    *   热点搜索模式：`type === 'hot'` 且 `hotSearchQuery` 非空时启用。
+        *   数据来源 A（数据库）：调用 `getIntel('hot', hotSearchQuery, range, ...)` 拉取已落库热点命中项。
+        *   数据来源 B（实时缓存）：对 `useGlobalIntel` 的 `liveItems` 做 `matchesHotSearch` 过滤。
+        *   合并策略：用 `Map(id -> item)` 去重，实时缓存条目会覆盖同 ID 的数据库条目，再按 `timestamp` 倒序排序。
+        *   推送提示：连接状态条在热点搜索模式下展示“正在推送{搜索词}有关消息”。
 *   **[SettingsPage.tsx](file:///home/system_/system_mvp/frontend/src/pages/SettingsPage.tsx)**: 用户个人中心，支持资料修改与偏好设置。
 
 ---
@@ -83,20 +102,20 @@ system_mvp/
 │   │   ├── db_models.py    # SQLAlchemy 数据库模型 (Table)
 │   │   ├── database.py     # 数据库连接配置
 │   │   └── main.py         # FastAPI 应用入口
-│   ├── tests/              # 自动化测试套件
 │   ├── check_latest_db.py   # 辅助脚本：查看最新入库情报
 │   ├── requirements.txt    # Python 依赖
 │   └── intel.db            # SQLite 数据库文件
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # UI 组件 (IntelItem, Banner, Sidebar)
-│   │   ├── pages/          # 页面组件 (Login, IntelPage, Settings)
+│   │   ├── components/     # UI 组件 (IntelItem, IntelList, Toolbar, Layout, Sidebar)
+│   │   ├── pages/          # 页面组件 (IntelPage, IntelDetail, Favorites, Login, Register, Settings)
 │   │   ├── context/        # React Context (AuthContext)
 │   │   ├── hooks/          # 自定义 Hooks (useGlobalIntel)
 │   │   ├── api.ts          # Axios API 客户端
 │   │   └── App.tsx         # 根组件与路由配置
 │   ├── package.json        # Node 依赖
 │   └── vite.config.ts      # Vite 配置
+├── tests/                  # 自动化测试套件 (pytest)
 └── readme.md               # 项目说明文档
 ```
 
@@ -106,26 +125,24 @@ system_mvp/
 
 ### 运行状态
 *   ✅ **用户系统**: 注册、登录、个人资料管理功能完备。
-*   ✅ **数据流转**: 从 Payload CMS 采集 -> 热流 SSE 推送 ->（详情页）缓存落库 -> 历史检索/收藏。
+*   ✅ **数据流转**: 从 Payload CMS 采集 -> 热流 SSE 推送（支持热点搜索：缓存+数据库合并检索）-> 详情/收藏/导出按需落库 -> 历史检索。
 *   ✅ **Agent 能力**: 历史/搜索提供 LLM 辅助回答；离线抽取链路支持 `data.txt` 批处理入库。
 *   ✅ **界面交互**: 支持深色模式，响应式布局，操作流畅。
 
 ### 自动化测试
-项目包含完善的测试用例，位于 `backend/tests/` 目录下：
-*   目前以“脚本型集成测试”为主（通过 `requests` 访问本地服务端点），适合回归关键业务流程。
-*   `test_full_pipeline.py`: 验证精炼/映射链路关键字段不丢失。
-*   `test_auth_flow.py`: 验证用户认证流程。
-*   `test_settings_flow.py`: 验证用户设置更新逻辑。
+项目测试用例位于 `tests/` 目录下，形态混合：
+*   **本地服务集成测试**（需要先启动后端）：例如 `test_auth_flow.py`、`test_settings_flow.py`。
+*   **进程内单元/组件测试**（直接实例化模块）：例如 `test_sse_resume.py`（验证 SSE 断线续传与 initial_batch 过滤）、`test_hot_intel_search.py`（验证热点检索逻辑）、`test_toggle_favorite_hot_cache.py`（验证未落库条目的收藏落库路径）。
 
 ---
 
 ## 6. 审查结论与改进清单 (Review Findings)
 
-1.  **文档与现状一致性**: 当前运行态以“热流直通广播 + 详情页落库”为主；LLM 精炼能力存在但未接入 CMS 轮询路径。建议持续保持文档与实现同步（本次已修正关键描述）。
-2.  **热流可靠性边界**: `last_fetched_ids` 与 `global_cache` 均为内存态，服务重启后会丢失，可能导致热流重复、热流历史无法追溯。可考虑将去重游标/缓存做持久化（SQLite/Redis）或以 CMS 侧排序游标增量拉取。
-3.  **落库策略清晰**: 详情页“缓存落库”设计降低了数据库写入压力，但也意味着历史库覆盖依赖用户访问行为；若需要完整留存，应提供后台入库开关或定时落库策略。
-4.  **LLM 调用降级**: `AgentScope` 初始化失败与执行错误均能回退到模拟逻辑，保证接口可用；若面向生产，建议区分“不可用”与“模拟结果”在前端提示层面的语义。
-5.  **测试形态**: 后端测试以集成脚本为主，覆盖业务路径但对 CI 友好度较弱；建议逐步补充可直接运行的单元测试（pytest）与静态检查（lint/typecheck）。
+1.  **文档与现状一致性**: 当前运行态以“热流直通广播 + 详情/收藏/导出按需落库”为主；热点搜索模式已实现“实时缓存 + 数据库”合并检索。LLM 精炼能力存在但未接入 CMS 轮询路径，应持续保持文档与实现同步（本次已修正关键描述）。
+2.  **热流可靠性边界**: `global_cache` 为内存态（固定长度队列），服务重启后会丢失，热点流与热点搜索模式的“实时侧可检索窗口”会重置。可考虑将游标/缓存持久化（SQLite/Redis）或依赖上游排序游标增量拉取。
+3.  **落库策略清晰**: 按需落库降低了写入压力，但也意味着历史库覆盖依赖用户行为与导出/收藏行为；若需要完整留存，应提供后台入库开关或定时落库策略。
+4.  **LLM 调用降级**: `AgentScope` 初始化失败与执行错误会回退到模拟逻辑，保证接口可用；面向生产建议在前端显式区分“真实模型输出”与“降级输出”。
+5.  **测试形态**: 已同时存在集成测试与进程内测试；建议为 CI 场景拆分“需后端启动”与“纯单测”两类测试，并补充静态检查（lint/typecheck）。
 
 ---
 
