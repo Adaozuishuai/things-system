@@ -7,6 +7,145 @@ import { useEffect, useRef, useState } from 'react';
 import { getIntel, toggleFavorite as apiToggleFavorite } from '@/api';
 import type { IntelItem } from '@/types';
 
+type EarthHorizonProps = {
+    height?: number | string;
+    showStars?: boolean;
+    title?: string;
+};
+
+function EarthHorizon({ height = 260, showStars = true, title = '' }: EarthHorizonProps) {
+    return (
+        <div
+            style={{
+                position: 'relative',
+                width: '100%',
+                height,
+                background: 'radial-gradient(ellipse at 50% 100%, #0a1a3a 0%, #000 60%)',
+                overflow: 'hidden',
+            }}
+        >
+            {showStars && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: `
+              radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.6) 50%, transparent 52%),
+              radial-gradient(1px 1px at 40% 30%, rgba(255,255,255,.5) 50%, transparent 52%),
+              radial-gradient(1px 1px at 75% 15%, rgba(255,255,255,.4) 50%, transparent 52%),
+              radial-gradient(1px 1px at 60% 55%, rgba(255,255,255,.4) 50%, transparent 52%),
+              radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,.45) 50%, transparent 52%),
+              radial-gradient(1px 1px at 25% 70%, rgba(255,255,255,.35) 50%, transparent 52%),
+              radial-gradient(1px 1px at 50% 80%, rgba(255,255,255,.25) 50%, transparent 52%)
+            `,
+                        opacity: 0.55,
+                        filter: 'blur(.2px)',
+                    }}
+                />
+            )}
+
+            <div
+                style={{
+                    position: 'absolute',
+                    left: '50%',
+                    bottom: -560,
+                    width: 1800,
+                    height: 1800,
+                    transform: 'translateX(-50%)',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    background: `
+            radial-gradient(circle at 40% 35%,
+              rgba(255,255,255,.20) 0%,
+              rgba(255,255,255,.10) 18%,
+              transparent 38%
+            ),
+            radial-gradient(circle at 50% 45%,
+              #0b3a8f 0%,
+              #093173 30%,
+              #062452 55%,
+              #03152e 70%,
+              #020a16 85%,
+              #000 100%
+            )
+          `,
+                    boxShadow: '0 -30px 70px rgba(0, 153, 255, 0.25), 0 -18px 35px rgba(0, 153, 255, 0.18)',
+                }}
+            >
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: `
+              radial-gradient(ellipse at 30% 30%, rgba(255,255,255,.55) 0%, transparent 55%),
+              radial-gradient(ellipse at 55% 35%, rgba(255,255,255,.45) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 45%, rgba(255,255,255,.35) 0%, transparent 55%),
+              radial-gradient(ellipse at 45% 55%, rgba(255,255,255,.35) 0%, transparent 60%),
+              radial-gradient(ellipse at 60% 60%, rgba(255,255,255,.25) 0%, transparent 62%)
+            `,
+                        opacity: 0.55,
+                        filter: 'blur(10px)',
+                        transform: 'scale(1.08)',
+                        mixBlendMode: 'screen',
+                    }}
+                />
+            </div>
+
+            <div
+                style={{
+                    position: 'absolute',
+                    left: '50%',
+                    bottom: -520,
+                    width: 1700,
+                    height: 1700,
+                    transform: 'translateX(-50%)',
+                    borderRadius: '50%',
+                    boxShadow: `
+            0 -6px 22px rgba(0, 180, 255, 0.55),
+            0 -14px 45px rgba(0, 140, 255, 0.40),
+            0 -28px 90px rgba(0, 90, 255, 0.25)
+          `,
+                    pointerEvents: 'none',
+                    filter: 'blur(0.2px)',
+                }}
+            />
+
+            <div
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: `
+            linear-gradient(to bottom,
+              rgba(0,0,0,1) 0%,
+              rgba(0,0,0,.85) 18%,
+              rgba(0,0,0,.35) 45%,
+              rgba(0,0,0,0) 70%
+            )
+          `,
+                    pointerEvents: 'none',
+                }}
+            />
+
+            {title ? (
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: 24,
+                        top: 20,
+                        color: 'rgba(255,255,255,0.9)',
+                        letterSpacing: 0.5,
+                        fontSize: 16,
+                        opacity: 0.85,
+                        userSelect: 'none',
+                    }}
+                >
+                    {title}
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 function matchesHotSearch(item: IntelItem, q: string) {
     const needle = q.trim().toLowerCase();
     if (!needle) return true;
@@ -41,12 +180,10 @@ export function IntelPage() {
 
     const { items: liveItems, status: liveStatus, toggleFavorite: toggleLiveFavorite, updateFavoritedLocal, reconnect: reconnectLive } = useGlobalIntel(type === 'hot');
 
-    const [historySearchValue, setHistorySearchValue] = useState('');
-    const historySearchInputRef = useRef<HTMLInputElement | null>(null);
+    const [searchValue, setSearchValue] = useState('');
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-    const [hotSearchValue, setHotSearchValue] = useState('');
     const [hotSearchQuery, setHotSearchQuery] = useState('');
-    const hotSearchInputRef = useRef<HTMLInputElement | null>(null);
     const [hotSearchDbItems, setHotSearchDbItems] = useState<IntelItem[]>([]);
     const [hotSearchItems, setHotSearchItems] = useState<IntelItem[]>([]);
     const [hotSearchLoading, setHotSearchLoading] = useState(false);
@@ -58,23 +195,17 @@ export function IntelPage() {
     };
 
     useEffect(() => {
-        if (type !== 'history') return;
-        const t = window.setTimeout(() => historySearchInputRef.current?.focus(), 0);
-        return () => window.clearTimeout(t);
-    }, [type]);
-
-    useEffect(() => {
-        if (type !== 'hot') return;
-        const t = window.setTimeout(() => hotSearchInputRef.current?.focus(), 0);
+        if (type !== 'history' && type !== 'hot') return;
+        const t = window.setTimeout(() => searchInputRef.current?.focus(), 0);
         return () => window.clearTimeout(t);
     }, [type]);
 
     const submitHistorySearch = () => {
-        setQuery(historySearchValue);
+        setQuery(searchValue);
     };
 
     const submitHotSearch = () => {
-        const q = hotSearchValue.trim();
+        const q = searchValue.trim();
         setHotSearchQuery(q);
         if (q) {
             setHotSearchRefreshToken((x) => x + 1);
@@ -127,11 +258,11 @@ export function IntelPage() {
     }, [isHotSearchMode, hotSearchDbItems, liveItems, hotSearchQuery]);
 
     const exitHotSearchMode = () => {
-        setHotSearchValue('');
+        setSearchValue('');
         setHotSearchQuery('');
         setHotSearchDbItems([]);
         setHotSearchItems([]);
-        hotSearchInputRef.current?.focus();
+        searchInputRef.current?.focus();
     };
 
     const handleHotSearchToggleFavorite = async (id: string, current: boolean) => {
@@ -193,7 +324,7 @@ export function IntelPage() {
                             ].join(' ')}
                         >
                             {liveStatus === 'connected'
-                                ? (isHotSearchMode ? `正在推送${hotSearchValue.trim() || hotSearchQuery}有关消息` : '消息推送中')
+                                ? (isHotSearchMode ? `正在推送${searchValue.trim() || hotSearchQuery}有关消息` : '消息推送中')
                                 : liveStatus === 'reconnecting'
                                     ? '重连中...'
                                     : liveStatus === 'connecting'
@@ -229,7 +360,7 @@ export function IntelPage() {
             )}
 
             {type !== 'hot' && status === 'done' && (() => {
-                const text = (type === 'history' ? (historySearchValue || query || '') : (query || '')).trim();
+                const text = (type === 'history' ? (searchValue || query || '') : (query || '')).trim();
                 if (!text) return null;
                 return (
                     <div className="mb-6 p-4 bg-blue-50/70 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 mx-6 mt-6">
@@ -260,13 +391,93 @@ export function IntelPage() {
                         >
                             <div
                                 className={[
-                                    "px-6 md:px-8 pt-3 pb-4",
+                                    "relative isolate px-6 md:px-8 pt-3 pb-4",
                                     "transition-all duration-300 ease-out",
                                     type === 'history' || type === 'hot' ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2",
                                 ].join(' ')}
                             >
+                                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                                    <div
+                                        className="absolute inset-0"
+                                        aria-hidden="true"
+                                        style={{
+                                            background: 'radial-gradient(ellipse at 50% 100%, #0a1a3a 0%, #000 60%)',
+                                        }}
+                                    />
+                                    <div
+                                        className="absolute inset-0 opacity-[0.55]"
+                                        aria-hidden="true"
+                                        style={{
+                                            filter: 'blur(0.2px)',
+                                            background: [
+                                                'radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.6) 50%, transparent 52%)',
+                                                'radial-gradient(1px 1px at 40% 30%, rgba(255,255,255,.5) 50%, transparent 52%)',
+                                                'radial-gradient(1px 1px at 75% 15%, rgba(255,255,255,.4) 50%, transparent 52%)',
+                                                'radial-gradient(1px 1px at 60% 55%, rgba(255,255,255,.4) 50%, transparent 52%)',
+                                                'radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,.45) 50%, transparent 52%)',
+                                            ].join(', '),
+                                        }}
+                                    />
+
+                                    <div
+                                        className="absolute left-1/2 rounded-full"
+                                        aria-hidden="true"
+                                        style={{
+                                            width: '1800px',
+                                            height: '1800px',
+                                            bottom: '-560px',
+                                            transform: 'translateX(-50%)',
+                                            background: [
+                                                'radial-gradient(circle at 40% 35%, rgba(255,255,255,.20) 0%, rgba(255,255,255,.10) 18%, transparent 38%)',
+                                                'radial-gradient(circle at 50% 45%, #0b3a8f 0%, #093173 30%, #062452 55%, #03152e 70%, #020a16 85%, #000 100%)',
+                                            ].join(', '),
+                                            boxShadow: '0 -30px 70px rgba(0, 153, 255, 0.25), 0 -18px 35px rgba(0, 153, 255, 0.18)',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <div
+                                            className="absolute inset-0"
+                                            aria-hidden="true"
+                                            style={{
+                                                background: [
+                                                    'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,.55) 0%, transparent 55%)',
+                                                    'radial-gradient(ellipse at 55% 35%, rgba(255,255,255,.45) 0%, transparent 60%)',
+                                                    'radial-gradient(ellipse at 70% 45%, rgba(255,255,255,.35) 0%, transparent 55%)',
+                                                    'radial-gradient(ellipse at 45% 55%, rgba(255,255,255,.35) 0%, transparent 60%)',
+                                                    'radial-gradient(ellipse at 60% 60%, rgba(255,255,255,.25) 0%, transparent 62%)',
+                                                ].join(', '),
+                                                opacity: 0.55,
+                                                filter: 'blur(10px)',
+                                                transform: 'scale(1.08)',
+                                                mixBlendMode: 'screen',
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div
+                                        className="absolute left-1/2 rounded-full"
+                                        aria-hidden="true"
+                                        style={{
+                                            width: '1700px',
+                                            height: '1700px',
+                                            bottom: '-520px',
+                                            transform: 'translateX(-50%)',
+                                            boxShadow: '0 -6px 22px rgba(0, 180, 255, 0.55), 0 -14px 45px rgba(0, 140, 255, 0.40), 0 -28px 90px rgba(0, 90, 255, 0.25)',
+                                            filter: 'blur(0.2px)',
+                                        }}
+                                    />
+
+                                    <div
+                                        className="absolute inset-0"
+                                        aria-hidden="true"
+                                        style={{
+                                            background:
+                                                'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 18%, rgba(0,0,0,.35) 45%, rgba(0,0,0,0) 70%)',
+                                        }}
+                                    />
+                                </div>
                                 <form
-                                    className="w-full max-w-3xl mx-auto"
+                                    className="relative z-10 w-full max-w-3xl mx-auto"
                                     onSubmit={(e) => {
                                         e.preventDefault();
                                         if (type === 'history') {
@@ -283,16 +494,10 @@ export function IntelPage() {
                                                 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                                             />
                                             <input
-                                                ref={type === 'history' ? historySearchInputRef : hotSearchInputRef}
+                                                ref={searchInputRef}
                                                 type="text"
-                                                value={type === 'history' ? historySearchValue : hotSearchValue}
-                                                onChange={(e) => {
-                                                    if (type === 'history') {
-                                                        setHistorySearchValue(e.target.value);
-                                                        return;
-                                                    }
-                                                    setHotSearchValue(e.target.value);
-                                                }}
+                                                value={searchValue}
+                                                onChange={(e) => setSearchValue(e.target.value)}
                                                 placeholder={type === 'history' ? "在历史情报中搜索" : "在今日热点中搜索"}
                                                 className="w-full h-11 pl-11 pr-4 rounded-full bg-gray-50 dark:bg-slate-700 text-base dark:text-white shadow-sm border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-300"
                                             />
@@ -304,7 +509,7 @@ export function IntelPage() {
                                         >
                                             搜索
                                         </button>
-                                        {type === 'hot' && (hotSearchValue.trim().length > 0 || hotSearchQuery.trim().length > 0) && (
+                                        {type === 'hot' && (searchValue.trim().length > 0 || hotSearchQuery.trim().length > 0) && (
                                             <button
                                                 type="button"
                                                 onClick={exitHotSearchMode}
