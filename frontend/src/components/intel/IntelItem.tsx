@@ -45,7 +45,6 @@ export function IntelItem({ item, onToggleFavorite, onSelect, selected }: IntelI
                     {item.summary}
                 </p>
                 <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    <span>{item.source}</span>
                     <span>{item.time}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">

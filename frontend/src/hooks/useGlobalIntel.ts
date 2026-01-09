@@ -149,10 +149,15 @@ export function useGlobalIntel(enabled: boolean = true) {
         }
     };
 
+    const updateFavoritedLocal = (id: string, favorited: boolean) => {
+        setItems(prev => prev.map(item => (item.id === id ? { ...item, favorited } : item)));
+    };
+
     return {
         items,
         status,
         toggleFavorite,
+        updateFavoritedLocal,
         reconnect
     };
 }
