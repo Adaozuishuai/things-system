@@ -20,6 +20,7 @@ interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
+  authLoading: boolean;
   applyTheme: (theme: string) => void;
 }
 
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!stored || stored === 'null' || stored === 'undefined') return null;
     return stored;
   });
+  const [authLoading, setAuthLoading] = useState<boolean>(!!token);
 
   const applyTheme = (theme: string) => {
     const root = window.document.documentElement;
@@ -46,7 +48,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshUser = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
+    setAuthLoading(true);
     try {
       const userData = await getMe();
       setUser(userData);
@@ -69,6 +75,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       console.error("Failed to fetch user info", error);
+    } finally {
+      setAuthLoading(false);
     }
   }, [token]);
 
@@ -88,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setAuthToken(null);
       setUser(null);
+      setAuthLoading(false);
     }
   }, [token, refreshUser]);
 
@@ -126,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, refreshUser, applyTheme, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, register, logout, refreshUser, applyTheme, isAuthenticated: !!user, authLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { IntelPage } from '@/pages/IntelPage';
 import { IntelDetailPage } from '@/pages/IntelDetailPage';
@@ -6,7 +6,7 @@ import { FavoritesPage } from '@/pages/FavoritesPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 function PlaceholderPage({ title }: { title: string }) {
     return (
@@ -17,6 +17,25 @@ function PlaceholderPage({ title }: { title: string }) {
     );
 }
 
+function RequireAuth({ children }: { children: JSX.Element }) {
+  const { isAuthenticated, authLoading } = useAuth();
+  const location = useLocation();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -25,8 +44,8 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/intel" replace />} />
-          <Route path="intel" element={<IntelPage />} />
-          <Route path="intel/:id" element={<IntelDetailPage />} />
+          <Route path="intel" element={<RequireAuth><IntelPage /></RequireAuth>} />
+          <Route path="intel/:id" element={<RequireAuth><IntelDetailPage /></RequireAuth>} />
           <Route path="favorites" element={<FavoritesPage />} />
           <Route path="overview" element={<PlaceholderPage title="数据概览" />} />
           <Route path="settings" element={<SettingsPage />} />

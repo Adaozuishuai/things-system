@@ -9,3 +9,4 @@ agentscope
 dashscope
 passlib[bcrypt]
 python-jose[cryptography]
+python-docx

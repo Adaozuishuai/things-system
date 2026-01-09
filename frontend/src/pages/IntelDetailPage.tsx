@@ -145,10 +145,8 @@ export function IntelDetailPage() {
 
                 {/* 4. Source Box (Blue) */}
                 <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-100/50 dark:border-blue-800/30 space-y-3">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">来源</h3>
                     <div className="space-y-2 text-sm text-gray-800 dark:text-gray-300 font-medium">
-                        <p>来源：{item.source}</p>
-                        <p>原标题：{item.title}</p>
+                        <p>标题：{item.title}</p>
                         <div className="flex items-start gap-1">
                             <span className="shrink-0">来源URL：</span>
                             {item.url ? (
