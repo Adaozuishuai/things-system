@@ -2,7 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getIntelDetail, toggleFavorite, exportIntel } from '@/api';
 import { IntelItem as IntelItemType } from '@/types';
-import { cn, isCountry } from '@/lib/utils';
+import { TAG_COLORS } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 
 export function IntelDetailPage() {
@@ -62,12 +63,6 @@ export function IntelDetailPage() {
         return <div className="p-8 text-center text-gray-500 dark:text-gray-400">情报未找到</div>;
     }
 
-    const tagColors: Record<string, string> = {
-        purple: "bg-purple-600 text-white",
-        blue: "bg-blue-600 text-white",
-        gray: "bg-gray-400 text-white",
-    };
-
     return (
         <div className="flex-1 flex flex-col h-full bg-gray-50/50 dark:bg-slate-900 p-4 md:p-6 overflow-hidden">
             {/* Header Actions (Floating Top Right) */}
@@ -99,15 +94,12 @@ export function IntelDetailPage() {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">拟投栏目</h3>
                     <div className="flex flex-wrap gap-2">
                         {item.tags.map((tag, index) => {
-                            const isCountryTag = isCountry(tag.label) || tag.color === 'red';
                             return (
                                 <span
                                     key={index}
                                     className={cn(
-                                        "px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide text-white",
-                                        isCountryTag 
-                                            ? "bg-red-600" 
-                                            : (tagColors[tag.color] || tagColors.purple)
+                                        "px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide",
+                                        TAG_COLORS[tag.color] || TAG_COLORS.gray
                                     )}
                                 >
                                     {tag.label}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { IntelItem } from '@/types';
-import { getGlobalStreamUrl, toggleFavorite as apiToggleFavorite } from '@/api';
+import { getFavorites, getGlobalStreamUrl, toggleFavorite as apiToggleFavorite } from '@/api';
 
 function mergeAndSortByTimestampDesc(existing: IntelItem[], incoming: IntelItem[]) {
     const byId = new Map<string, IntelItem>();
@@ -30,6 +30,85 @@ export function useGlobalIntel(enabled: boolean = true) {
     const attemptRef = useRef(0);
     const lastSeenRef = useRef<{ ts: number; id: string } | null>(null);
     const [reconnectToken, setReconnectToken] = useState(0);
+    const favoritesRef = useRef<Set<string>>(new Set());
+    const favoritesLoadedRef = useRef(false);
+
+    const getFavoritesStorageKey = () => {
+        const username = localStorage.getItem('username') || 'anon';
+        return `favorites:intel_ids:${username}`;
+    };
+
+    const persistFavoritesToStorage = () => {
+        try {
+            const key = getFavoritesStorageKey();
+            localStorage.setItem(key, JSON.stringify(Array.from(favoritesRef.current)));
+        } catch {
+        }
+    };
+
+    const loadFavoritesFromStorage = () => {
+        if (favoritesLoadedRef.current) return;
+        favoritesLoadedRef.current = true;
+        try {
+            const key = getFavoritesStorageKey();
+            const raw = localStorage.getItem(key);
+            if (!raw) return;
+            const ids: unknown = JSON.parse(raw);
+            if (!Array.isArray(ids)) return;
+            favoritesRef.current = new Set(ids.filter((x) => typeof x === 'string') as string[]);
+        } catch {
+        }
+    };
+
+    const applyFavorites = (data: IntelItem[]) => {
+        if (!data.length) return data;
+        const favorites = favoritesRef.current;
+        if (!favorites.size) return data;
+        return data.map((item) => (favorites.has(item.id) ? { ...item, favorited: true } : item));
+    };
+
+    const setFavoriteLocal = (id: string, favorited: boolean) => {
+        if (favorited) {
+            favoritesRef.current.add(id);
+        } else {
+            favoritesRef.current.delete(id);
+        }
+        persistFavoritesToStorage();
+    };
+
+    useEffect(() => {
+        if (!enabled) return;
+        loadFavoritesFromStorage();
+
+        let cancelled = false;
+        const loadAllFavorites = async () => {
+            try {
+                const limit = 200;
+                let offset = 0;
+                let total = Infinity;
+                const ids = new Set<string>();
+                while (!cancelled && offset < total && offset < 5000) {
+                    const res = await getFavorites("", limit, offset);
+                    for (const item of res.items ?? []) {
+                        ids.add(item.id);
+                    }
+                    total = typeof res.total === 'number' ? res.total : offset + (res.items?.length ?? 0);
+                    if (!res.items || res.items.length < limit) break;
+                    offset += limit;
+                }
+                if (cancelled) return;
+                favoritesRef.current = ids;
+                persistFavoritesToStorage();
+                setItems((prev) => applyFavorites(prev));
+            } catch {
+            }
+        };
+
+        loadAllFavorites();
+        return () => {
+            cancelled = true;
+        };
+    }, [enabled]);
 
     useEffect(() => {
         if (!enabled) {
@@ -93,7 +172,7 @@ export function useGlobalIntel(enabled: boolean = true) {
 
             es.addEventListener('initial_batch', (event) => {
                 try {
-                    const data: IntelItem[] = JSON.parse((event as MessageEvent).data);
+                    const data: IntelItem[] = applyFavorites(JSON.parse((event as MessageEvent).data));
                     setItems(prev => {
                         const merged = mergeAndSortByTimestampDesc(prev, data);
                         const top = merged[0];
@@ -109,7 +188,7 @@ export function useGlobalIntel(enabled: boolean = true) {
 
             es.addEventListener('new_intel', (event) => {
                 try {
-                    const item: IntelItem = JSON.parse((event as MessageEvent).data);
+                    const item: IntelItem = applyFavorites([JSON.parse((event as MessageEvent).data)])[0];
                     lastSeenRef.current = { ts: item.timestamp, id: item.id };
                     setItems(prev => mergeAndSortByTimestampDesc(prev, [item]));
                 } catch (e) {
@@ -140,9 +219,11 @@ export function useGlobalIntel(enabled: boolean = true) {
 
     const toggleFavorite = async (id: string, current: boolean) => {
         try {
-            await apiToggleFavorite(id, !current);
+            const next = !current;
+            await apiToggleFavorite(id, next);
+            setFavoriteLocal(id, next);
             setItems(prev => prev.map(item => 
-                item.id === id ? { ...item, favorited: !current } : item
+                item.id === id ? { ...item, favorited: next } : item
             ));
         } catch (error) {
             console.error("Failed to toggle favorite", error);
@@ -150,6 +231,7 @@ export function useGlobalIntel(enabled: boolean = true) {
     };
 
     const updateFavoritedLocal = (id: string, favorited: boolean) => {
+        setFavoriteLocal(id, favorited);
         setItems(prev => prev.map(item => (item.id === id ? { ...item, favorited } : item)));
     };
 

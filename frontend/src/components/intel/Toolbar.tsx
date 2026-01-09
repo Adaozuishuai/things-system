@@ -14,7 +14,7 @@ interface ToolbarProps {
 export function Toolbar({ activeTab, onTabChange, onExport, timeRange, onTimeRangeChange, below }: ToolbarProps) {
     return (
         <div className="sticky top-0 z-10">
-            <div className="flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-800 border-b dark:border-slate-700">
+            <div className="flex items-center justify-between px-8 py-4 bg-transparent dark:bg-transparent border-b border-transparent">
                 <div className="flex gap-8">
                     <button
                         onClick={() => onTabChange("hot")}
