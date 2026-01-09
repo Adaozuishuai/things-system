@@ -43,6 +43,7 @@ export function useGlobalIntel(enabled: boolean = true) {
             const key = getFavoritesStorageKey();
             localStorage.setItem(key, JSON.stringify(Array.from(favoritesRef.current)));
         } catch {
+            void 0;
         }
     };
 
@@ -57,6 +58,7 @@ export function useGlobalIntel(enabled: boolean = true) {
             if (!Array.isArray(ids)) return;
             favoritesRef.current = new Set(ids.filter((x) => typeof x === 'string') as string[]);
         } catch {
+            void 0;
         }
     };
 
@@ -101,6 +103,7 @@ export function useGlobalIntel(enabled: boolean = true) {
                 persistFavoritesToStorage();
                 setItems((prev) => applyFavorites(prev));
             } catch {
+                void 0;
             }
         };
 

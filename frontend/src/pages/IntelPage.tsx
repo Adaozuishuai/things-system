@@ -27,7 +27,6 @@ function matchesHotSearch(item: IntelItem, q: string) {
 export function IntelPage() {
     const {
         items: searchItems,
-        answer,
         status,
         progress,
         query,
@@ -127,6 +126,14 @@ export function IntelPage() {
         setHotSearchItems(merged);
     }, [isHotSearchMode, hotSearchDbItems, liveItems, hotSearchQuery]);
 
+    const exitHotSearchMode = () => {
+        setHotSearchValue('');
+        setHotSearchQuery('');
+        setHotSearchDbItems([]);
+        setHotSearchItems([]);
+        hotSearchInputRef.current?.focus();
+    };
+
     const handleHotSearchToggleFavorite = async (id: string, current: boolean) => {
         const next = !current;
         setHotSearchItems((prev) => prev.map((x) => (x.id === id ? { ...x, favorited: next } : x)));
@@ -221,18 +228,17 @@ export function IntelPage() {
                 </div>
             )}
 
-            {/* AI Answer */}
-            {type !== 'hot' && answer && status === 'done' && (
-                <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm mx-6 mt-6">
-                    <h3 className="text-sm font-bold text-blue-800 dark:text-blue-200 uppercase tracking-wide mb-2 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                        {type === 'history' ? (historySearchValue || query || '') : '智能综述'}
-                    </h3>
-                    <p className="text-gray-800 dark:text-gray-200 leading-relaxed">
-                        {answer}
-                    </p>
-                </div>
-            )}
+            {type !== 'hot' && status === 'done' && (() => {
+                const text = (type === 'history' ? (historySearchValue || query || '') : (query || '')).trim();
+                if (!text) return null;
+                return (
+                    <div className="mb-6 p-4 bg-blue-50/70 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 mx-6 mt-6">
+                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            共找到 {searchItems.length} 条与「{text}」相关的信息
+                        </span>
+                    </div>
+                );
+            })()}
         </>
     );
 
@@ -298,6 +304,15 @@ export function IntelPage() {
                                         >
                                             搜索
                                         </button>
+                                        {type === 'hot' && (hotSearchValue.trim().length > 0 || hotSearchQuery.trim().length > 0) && (
+                                            <button
+                                                type="button"
+                                                onClick={exitHotSearchMode}
+                                                className="h-11 px-5 rounded-full bg-transparent text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-600 hover:bg-gray-50/70 dark:hover:bg-slate-700/60 transition-colors shadow-sm font-medium"
+                                            >
+                                                清除
+                                            </button>
+                                        )}
                                     </div>
                                 </form>
                             </div>
