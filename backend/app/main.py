@@ -27,11 +27,7 @@ setup_cors(app)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    start_time = time.time()
-    print(f"Incoming request: {request.method} {request.url}")
     response = await call_next(request)
-    process_time = time.time() - start_time
-    print(f"Request completed: {request.method} {request.url} - Status: {response.status_code} - Time: {process_time:.4f}s")
     return response
 
 # Include Routers

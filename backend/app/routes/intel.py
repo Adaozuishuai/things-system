@@ -150,7 +150,7 @@ async def export_intel(req: ExportRequest, db: Session = Depends(get_db)):
         if body_text:
             _add_body(body_text)
 
-        source_parts = [f"原标题：{_safe_text(item.title) or '未命名'}"]
+        source_parts = [f"来源：{_safe_text(item.source) or '未知'}", f"原标题：{_safe_text(item.title) or '未命名'}"]
         if _safe_text(item.url):
             source_parts.append(f"来源URL：{_safe_text(item.url)}")
         doc.add_paragraph(f"（{'，'.join(source_parts)}）")

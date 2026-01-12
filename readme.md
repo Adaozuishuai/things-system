@@ -82,9 +82,9 @@ An intelligent intelligence aggregation and refinement platform. This system pol
 
 5.  Run the Server:
     ```bash
-    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
     ```
-    The API will be available at `http://localhost:8000`. API Docs at `http://localhost:8000/docs`.
+    The API will be available at `http://localhost:8001`. API Docs at `http://localhost:8001/docs`.
 
 ### 2. Frontend Setup
 

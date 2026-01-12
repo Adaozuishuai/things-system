@@ -132,45 +132,54 @@ export function useGlobalIntel(enabled: boolean = true) {
         }
 
         isClosingRef.current = false;
-        attemptRef.current = 0;
+        
+        // Ensure clean state before connecting
+        closeConnection();
 
         const connect = () => {
-            closeConnection();
-
-            isClosingRef.current = false;
-            setStatus(attemptRef.current > 0 ? 'reconnecting' : 'connecting');
-
             const last = lastSeenRef.current;
             const url = getGlobalStreamUrl(last ? { after_ts: last.ts, after_id: last.id } : undefined);
+            
+            console.log(`[SSE] Connecting to ${url}`);
             const es = new EventSource(url);
             eventSourceRef.current = es;
 
             es.onopen = () => {
+                console.log('[SSE] Connected');
                 attemptRef.current = 0;
                 setStatus('connected');
             };
 
             es.onerror = () => {
+                // If explicitly closing, ignore error
                 if (isClosingRef.current) {
                     return;
                 }
+                
+                // Don't reconnect if page is hidden or offline
                 if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
                     return;
                 }
                 if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                     return;
                 }
+
+                es.close();
+                eventSourceRef.current = null;
+
                 if (attemptRef.current >= 5) {
+                    console.error('[SSE] Max retries reached');
                     setStatus('error');
                     return;
                 }
 
                 attemptRef.current += 1;
                 const delay = Math.min(30000, 1000 * Math.pow(2, attemptRef.current - 1));
+                console.log(`[SSE] Connection error, retrying in ${delay}ms (attempt ${attemptRef.current})`);
                 setStatus('reconnecting');
 
                 reconnectTimerRef.current = window.setTimeout(() => {
-                    connect();
+                    setReconnectToken(t => t + 1);
                 }, delay);
             };
 

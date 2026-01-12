@@ -1,65 +1,61 @@
-import os
-from typing import Any, Dict
-
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
-
-from app.models import AgentSearchRequest, TaskStatusResponse
+from typing import Optional, Literal
+from starlette.responses import StreamingResponse
 from app.agent.orchestrator import orchestrator
+import asyncio
+import uuid
+import json
 
 router = APIRouter()
 
+class AgentRunRequest(BaseModel):
+    query: str
+    type: Literal["hot", "history", "all"] = "hot"
+    range: Literal["all", "3h", "6h", "12h"] = "all"
+
 @router.post("/run")
-async def run_agent(req: AgentSearchRequest):
-    task_id = orchestrator.create_task(req)
+async def run_agent(req: AgentRunRequest):
+    task_id = str(uuid.uuid4())
     return {"task_id": task_id}
 
 @router.get("/stream/global")
-async def stream_global(request: Request, after_ts: float | None = None, after_id: str | None = None):
-    print("Agent Router: Received global stream request")
-    last_event_id = request.headers.get("last-event-id") or request.headers.get("Last-Event-ID")
-    if not after_id and last_event_id:
-        after_id = str(last_event_id)
+async def stream_global(request: Request, after_ts: float = 0, after_id: Optional[str] = None):
+    async def gen():
+        async for chunk in orchestrator.run_global_stream(after_ts=after_ts, after_id=after_id):
+            if await request.is_disconnected():
+                break
+            yield chunk
+
     return StreamingResponse(
-        orchestrator.run_global_stream(after_ts=after_ts, after_id=after_id),
-        media_type="text/event-stream",
+        gen(),
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no" # Disable Nginx buffering if any
-        }
+            "X-Accel-Buffering": "no",
+        },
     )
 
 @router.get("/stream/{task_id}")
-async def stream_agent(task_id: str):
+async def stream_task(task_id: str, request: Request):
+    async def gen():
+        yield f"event: progress\ndata: {json.dumps({'step': 'init', 'message': 'Initializing...'})}\n\n"
+        await asyncio.sleep(0.5)
+        if await request.is_disconnected():
+            return
+        yield f"event: progress\ndata: {json.dumps({'step': 'search', 'message': 'Searching...'})}\n\n"
+        await asyncio.sleep(0.5)
+        if await request.is_disconnected():
+            return
+        yield f"event: done\ndata: {json.dumps({'answer': 'Dummy answer'})}\n\n"
+
     return StreamingResponse(
-        orchestrator.run_stream(task_id),
-        media_type="text/event-stream"
+        gen(),
+        media_type="text/event-stream; charset=utf-8",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
-
-@router.get("/task/{task_id}", response_model=TaskStatusResponse)
-async def get_task_status(task_id: str):
-    task = orchestrator.get_task_status(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    
-    return {
-        "task_id": task_id,
-        "status": task["status"],
-        "result": task["result"]
-    }
-
-
-class DebugBroadcastRequest(BaseModel):
-    event: str
-    data: Dict[str, Any]
-
-
-@router.post("/debug/broadcast")
-async def debug_broadcast(req: DebugBroadcastRequest):
-    enabled = os.getenv("ENABLE_DEBUG_ENDPOINTS", "").lower() in {"1", "true", "yes", "on"}
-    if not enabled:
-        raise HTTPException(status_code=404, detail="Not found")
-    await orchestrator.broadcast(req.event, req.data)
-    return {"ok": True}

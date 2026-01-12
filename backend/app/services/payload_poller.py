@@ -4,6 +4,7 @@ import json
 import uuid
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+import os
 from app.services.base_poller import BasePoller
 from app.models import Tag, IntelItem
 from app.agent.orchestrator import orchestrator
@@ -33,7 +34,7 @@ class PayloadPoller(BasePoller):
         self.email = email
         self.password = password
         self.user_collection = user_collection
-        self.poll_interval = interval
+        self.poll_interval = max(2, interval)
         self.logger.info(f"PayloadPoller configured: URL={self.cms_url}, Collection={self.collection_slug}, User={self.email}")
 
     def is_configured(self) -> bool:
@@ -75,17 +76,28 @@ class PayloadPoller(BasePoller):
         # 0. Daily DB Cleanup
         now = datetime.now().timestamp()
         if now - self.last_cleanup_time > 86400: # 24 hours
-            self.logger.info("Running daily DB cleanup...")
-            db = SessionLocal()
-            try:
-                deleted = crud.delete_old_intel_items(db, days=30)
-                if deleted > 0:
-                    self.logger.info(f"Cleaned up {deleted} old items.")
+            retention_days_raw = (os.getenv("INTEL_RETENTION_DAYS") or "").strip()
+            if retention_days_raw:
+                try:
+                    retention_days = int(retention_days_raw)
+                except Exception:
+                    retention_days = 0
+                if retention_days > 0:
+                    self.logger.info(f"Running daily DB cleanup (retention_days={retention_days})...")
+                    db = SessionLocal()
+                    try:
+                        deleted = crud.delete_old_intel_items(db, days=retention_days)
+                        if deleted > 0:
+                            self.logger.info(f"Cleaned up {deleted} old items.")
+                        self.last_cleanup_time = now
+                    except Exception as e:
+                        self.logger.error(f"Cleanup failed: {e}")
+                    finally:
+                        db.close()
+                else:
+                    self.last_cleanup_time = now
+            else:
                 self.last_cleanup_time = now
-            except Exception as e:
-                self.logger.error(f"Cleanup failed: {e}")
-            finally:
-                db.close()
 
         # Initial login if needed
         if not self.token:
@@ -157,10 +169,10 @@ class PayloadPoller(BasePoller):
         
         for doc in new_docs:
             # DEBUG: Log keys to check availability of thingId and url
-            if len(refined_item_dicts) == 0: # Only log once per batch
-                self.logger.info(f"Doc keys: {list(doc.keys())}")
-                self.logger.info(f"Doc thingId: {doc.get('thingId')}")
-                self.logger.info(f"Doc url: {doc.get('url')}")
+            if len(refined_item_dicts) == 0:
+                self.logger.debug(f"Doc keys: {list(doc.keys())}")
+                self.logger.debug(f"Doc thingId: {doc.get('thingId')}")
+                self.logger.debug(f"Doc url: {doc.get('url')}")
 
             # Pre-map to dict structure expected by Orchestrator
             # We keep 'original' for context if available
@@ -187,16 +199,33 @@ class PayloadPoller(BasePoller):
         # Execute refinement concurrently with limit
         # refined_item_dicts = await asyncio.gather(*tasks)
 
-        # 3. Broadcast only (persist to history on detail view)
-        broadcast_count = 0
+        items: List[IntelItem] = []
         for item_dict in refined_item_dicts:
-            self.logger.info(f"Preparing to broadcast item: {item_dict.get('id')}")
-
+            self.logger.debug(f"Preparing to broadcast item: {item_dict.get('id')}")
             item = self._dict_to_intel_item(item_dict)
             if not item:
                 self.logger.error(f"Failed to map item {item_dict.get('id')} to IntelItem model")
                 continue
+            items.append(item)
 
+        if not items:
+            return
+
+        def _persist_batch(batch: List[IntelItem]) -> int:
+            db = SessionLocal()
+            try:
+                return crud.upsert_intel_items(db, batch)
+            finally:
+                db.close()
+
+        try:
+            await asyncio.to_thread(_persist_batch, items)
+        except Exception as e:
+            self.logger.error(f"DB upsert batch failed: {e}")
+            return
+
+        broadcast_count = 0
+        for item in items:
             await orchestrator.broadcast("new_intel", item.model_dump())
             broadcast_count += 1
 
@@ -258,8 +287,18 @@ class PayloadPoller(BasePoller):
                          if t_part.strip():
                              tags.append(Tag(label=t_part.strip(), color="gray"))
 
+            thing_id = str(data.get("thingId") or data.get("thing_id")) if (data.get("thingId") or data.get("thing_id")) else None
+            if thing_id:
+                item_id = thing_id
+            else:
+                url = data.get("url")
+                if url:
+                    item_id = IntelItem._stable_id_from_value(url)
+                else:
+                    item_id = str(data.get("id"))
+
             return IntelItem(
-                id=str(data.get("id")),
+                id=str(item_id),
                 title=str(data.get("title")),
                 summary=str(data.get("summary")),
                 source=str(data.get("source")),
@@ -270,7 +309,7 @@ class PayloadPoller(BasePoller):
                 favorited=False,
                 is_hot=True,
                 content=str(data.get("content")) if data.get("content") else None,
-                thing_id=str(data.get("thingId")) if data.get("thingId") else None
+                thing_id=thing_id
             )
         except Exception as e:
             self.logger.error(f"Error mapping dict to IntelItem: {e}")

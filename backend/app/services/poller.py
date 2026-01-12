@@ -1,8 +1,11 @@
+import asyncio
 import aiohttp
 from typing import Optional, Dict, Any
 from app.services.base_poller import BasePoller
 from app.models import IntelItem
 from app.agent.orchestrator import orchestrator
+from app.database import SessionLocal
+from app import crud
 
 class ArticlePoller(BasePoller):
     def __init__(self):
@@ -37,6 +40,14 @@ class ArticlePoller(BasePoller):
     async def _process_data(self, data: Dict[str, Any]):
         try:
             item = IntelItem.from_cms_data(data, self.current_id)
+            def _persist_one(it: IntelItem):
+                db = SessionLocal()
+                try:
+                    crud.upsert_intel_items(db, [it])
+                finally:
+                    db.close()
+
+            await asyncio.to_thread(_persist_one, item)
             await orchestrator.broadcast("new_intel", item.model_dump())
             self.logger.info(f"Broadcasted article {self.current_id}")
         except Exception as e:

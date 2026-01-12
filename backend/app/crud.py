@@ -4,7 +4,7 @@ from .models import IntelItem, Tag
 import json
 from datetime import datetime
 from sqlalchemy import or_
-from typing import List, Optional
+from typing import List, Optional, Iterable
 
 def _deserialize_tags(raw_tags) -> List[Tag]:
     if not raw_tags:
@@ -95,6 +95,106 @@ def create_intel_item(db: Session, item: IntelItem):
     db.commit()
     db.refresh(db_item)
     return db_item
+
+def upsert_intel_item(db: Session, item: IntelItem):
+    """
+    Upsert intel item by primary key id.
+    Preserves favorited status.
+    """
+    tags_list = _serialize_tags(item.tags)
+    db_item = db.query(db_models.IntelItemDB).filter(db_models.IntelItemDB.id == item.id).first()
+    if not db_item and item.thing_id:
+        db_item = db.query(db_models.IntelItemDB).filter(db_models.IntelItemDB.thing_id == item.thing_id).first()
+    if db_item:
+        if db_item.id != item.id:
+            existing_with_target_id = db.query(db_models.IntelItemDB).filter(db_models.IntelItemDB.id == item.id).first()
+            if not existing_with_target_id:
+                db_item.id = item.id
+        db_item.title = item.title
+        db_item.summary = item.summary
+        db_item.source = item.source
+        db_item.url = item.url
+        db_item.publish_time_str = item.time
+        db_item.timestamp = item.timestamp
+        db_item.tags = tags_list
+        db_item.is_hot = bool(item.is_hot)
+        if item.content is not None:
+            db_item.content = item.content
+        if item.thing_id:
+            db_item.thing_id = item.thing_id
+        db.commit()
+        db.refresh(db_item)
+        return db_item
+    return create_intel_item(db, item)
+
+def upsert_intel_items(db: Session, items: Iterable[IntelItem]) -> int:
+    items_list = [x for x in (items or []) if x]
+    if not items_list:
+        return 0
+
+    ids = [x.id for x in items_list if x.id]
+    thing_ids = [x.thing_id for x in items_list if x.thing_id]
+
+    existing_by_id = {}
+    if ids:
+        rows = db.query(db_models.IntelItemDB).filter(db_models.IntelItemDB.id.in_(ids)).all()
+        existing_by_id = {r.id: r for r in rows}
+
+    existing_by_thing_id = {}
+    if thing_ids:
+        rows = db.query(db_models.IntelItemDB).filter(db_models.IntelItemDB.thing_id.in_(thing_ids)).all()
+        existing_by_thing_id = {r.thing_id: r for r in rows if r.thing_id}
+
+    changed = 0
+    for item in items_list:
+        tags_list = _serialize_tags(item.tags)
+        row = existing_by_id.get(item.id)
+        if not row and item.thing_id:
+            row = existing_by_thing_id.get(item.thing_id)
+
+        if row:
+            if row.id != item.id:
+                if item.id and item.id not in existing_by_id:
+                    existing_by_id.pop(row.id, None)
+                    row.id = item.id
+                    existing_by_id[row.id] = row
+            row.title = item.title
+            row.summary = item.summary
+            row.source = item.source
+            row.url = item.url
+            row.publish_time_str = item.time
+            row.timestamp = item.timestamp
+            row.tags = tags_list
+            row.is_hot = bool(item.is_hot)
+            if item.content is not None:
+                row.content = item.content
+            if item.thing_id:
+                row.thing_id = item.thing_id
+            changed += 1
+            continue
+
+        db_item = db_models.IntelItemDB(
+            id=item.id,
+            title=item.title,
+            summary=item.summary,
+            source=item.source,
+            url=item.url,
+            publish_time_str=item.time,
+            timestamp=item.timestamp,
+            tags=tags_list,
+            is_hot=item.is_hot,
+            favorited=item.favorited,
+            content=item.content,
+            thing_id=item.thing_id,
+        )
+        db.add(db_item)
+        existing_by_id[item.id] = db_item
+        if item.thing_id:
+            existing_by_thing_id[item.thing_id] = db_item
+        changed += 1
+
+    db.commit()
+    return changed
 
 def update_intel_item(db: Session, item: IntelItem):
     """
@@ -333,3 +433,16 @@ def delete_old_intel_items(db: Session, days: int = 30) -> int:
     ).delete()
     db.commit()
     return deleted_count
+
+def demote_hot_items(db: Session, older_than_hours: int = 12) -> int:
+    """
+    Mark items older than threshold as history (is_hot=False).
+    Returns number of updated items.
+    """
+    cutoff_ts = datetime.now().timestamp() - (older_than_hours * 3600)
+    updated = db.query(db_models.IntelItemDB).filter(
+        db_models.IntelItemDB.is_hot == True,
+        db_models.IntelItemDB.timestamp < cutoff_ts,
+    ).update({db_models.IntelItemDB.is_hot: False}, synchronize_session=False)
+    db.commit()
+    return int(updated or 0)

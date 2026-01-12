@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Literal, Dict, Any
 from datetime import datetime
 import uuid
+import hashlib
 
 class Tag(BaseModel):
     label: str
@@ -23,8 +24,38 @@ class IntelItem(BaseModel):
     thing_id: Optional[str] = None # CMS thingId
 
     @staticmethod
-    def create_tags(regional_country: List[str] = [], domain: List[str] = []) -> List[Tag]:
+    def _stable_id_from_value(value: Optional[Any], fallback: Optional[str] = None) -> str:
+        if value is None or value == "":
+            if fallback:
+                return fallback
+            return str(uuid.uuid4())
+        if isinstance(value, (int, float)):
+            return str(int(value))
+        s = str(value)
+        if s.isdigit():
+            return s
+        digest = hashlib.sha1(s.encode("utf-8")).hexdigest()
+        return digest
+
+    @staticmethod
+    def _parse_publish_datetime(value: Optional[Any]) -> datetime:
+        if not value:
+            return datetime.now()
+        if isinstance(value, datetime):
+            return value
+        s = str(value).strip()
+        if not s:
+            return datetime.now()
+        try:
+            return datetime.fromisoformat(s.replace("Z", "+00:00"))
+        except Exception:
+            return datetime.now()
+
+    @staticmethod
+    def create_tags(regional_country: Optional[List[str]] = None, domain: Optional[List[str]] = None) -> List[Tag]:
         tags = []
+        regional_country = regional_country or []
+        domain = domain or []
         if regional_country:
             for country in regional_country:
                 tags.append(Tag(label=country, color="red"))
@@ -73,18 +104,28 @@ class IntelItem(BaseModel):
                         domain.append(item['name'])
                         
         tags = cls.create_tags(regional_country, domain)
+
+        dt = cls._parse_publish_datetime(data.get("publishDate") or data.get("createdAt"))
+        thing_id = data.get("thingId") or data.get("thing_id")
+        if thing_id:
+            stable_id = str(thing_id)
+        else:
+            url = data.get("url")
+            item_id = url or data.get("id") or current_id
+            stable_id = cls._stable_id_from_value(item_id)
         
         return cls(
-            id=str(uuid.uuid4()),
+            id=stable_id,
             title=title,
             summary=summary,
             source=data.get('author', 'CMS'),
             url=data.get('url'),
-            time=data.get('publishDate', datetime.now().strftime("%Y/%m/%d %H:%M")),
-            timestamp=datetime.now().timestamp(),
+            time=dt.strftime("%Y/%m/%d %H:%M"),
+            timestamp=dt.timestamp(),
             tags=tags,
             favorited=False,
-            is_hot=True
+            is_hot=True,
+            thing_id=str(thing_id) if thing_id else None
         )
 
 class IntelListResponse(BaseModel):
