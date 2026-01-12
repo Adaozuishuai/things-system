@@ -89,6 +89,10 @@ export const getGlobalStreamUrl = (opts?: { after_ts?: number; after_id?: string
     if (opts?.after_id) {
         url.searchParams.set('after_id', opts.after_id);
     }
+    const token = localStorage.getItem('token');
+    if (token && token !== 'null' && token !== 'undefined') {
+        url.searchParams.set('token', token);
+    }
     return url.toString();
 };
 

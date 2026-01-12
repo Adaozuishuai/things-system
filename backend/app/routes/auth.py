@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -7,6 +7,7 @@ from app.models import UserCreate, Token, UserUpdate, PasswordChange, UserRespon
 from app.db_models import UserDB
 from app.services.auth_utils import get_password_hash, verify_password, create_access_token, SECRET_KEY, ALGORITHM
 from datetime import timedelta
+from typing import Optional
 import os
 import re
 
@@ -15,6 +16,7 @@ router = APIRouter()
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -34,6 +36,21 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
     return user
+
+async def get_current_user_any(
+    request: Request,
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+):
+    if token is None:
+        token = request.query_params.get("token")
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return await get_current_user(token=token, db=db)
 
 @router.post("/register", response_model=Token)
 def register(user: UserCreate, db: Session = Depends(get_db)):

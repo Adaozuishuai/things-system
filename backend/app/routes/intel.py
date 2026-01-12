@@ -9,6 +9,8 @@ from typing import Optional, Literal
 from sqlalchemy.orm import Session
 from app.models import IntelListResponse, FavoriteToggleRequest, ExportRequest, IntelItem, Tag
 from app.database import get_db
+from app.db_models import UserDB
+from app.routes.auth import get_current_user
 from app import crud
 from app.agent.orchestrator import orchestrator
 
@@ -21,7 +23,8 @@ async def get_intel(
     range: Literal["all", "3h", "6h", "12h"] = "all",
     limit: int = 20,
     offset: int = 0,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_current_user),
 ):
     items, total = crud.get_filtered_intel(db, type_filter=type, q=q, range_filter=range, limit=limit, offset=offset)
     return {"items": items, "total": total}
@@ -31,13 +34,18 @@ async def get_favorites(
     q: Optional[str] = None,
     limit: int = 20,
     offset: int = 0,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_current_user),
 ):
     items, total = crud.get_favorites(db, q=q, limit=limit, offset=offset)
     return {"items": items, "total": total}
 
 @router.post("/export")
-async def export_intel(req: ExportRequest, db: Session = Depends(get_db)):
+async def export_intel(
+    req: ExportRequest,
+    db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_current_user),
+):
     # Determine items to export
     items = []
     
@@ -179,7 +187,7 @@ async def export_intel(req: ExportRequest, db: Session = Depends(get_db)):
     )
 
 @router.get("/{id}", response_model=IntelItem)
-async def get_intel_detail(id: str, db: Session = Depends(get_db)):
+async def get_intel_detail(id: str, db: Session = Depends(get_db), current_user: UserDB = Depends(get_current_user)):
     item = crud.get_intel_by_id(db, id)
     if not item:
         cached = orchestrator.get_cached_intel(id)
@@ -235,7 +243,12 @@ async def get_intel_detail(id: str, db: Session = Depends(get_db)):
     )
 
 @router.post("/{id}/favorite")
-async def toggle_favorite(id: str, req: FavoriteToggleRequest, db: Session = Depends(get_db)):
+async def toggle_favorite(
+    id: str,
+    req: FavoriteToggleRequest,
+    db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_current_user),
+):
     item = crud.toggle_favorite(db, id, req.favorited)
     if item:
         return item

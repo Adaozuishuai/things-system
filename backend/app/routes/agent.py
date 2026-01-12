@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
 from pydantic import BaseModel
 from typing import Optional, Literal
 from starlette.responses import StreamingResponse
 from app.agent.orchestrator import orchestrator
+from app.db_models import UserDB
+from app.routes.auth import get_current_user, get_current_user_any
 import asyncio
 import uuid
 import json
@@ -15,12 +17,17 @@ class AgentRunRequest(BaseModel):
     range: Literal["all", "3h", "6h", "12h"] = "all"
 
 @router.post("/run")
-async def run_agent(req: AgentRunRequest):
+async def run_agent(req: AgentRunRequest, current_user: UserDB = Depends(get_current_user)):
     task_id = str(uuid.uuid4())
     return {"task_id": task_id}
 
 @router.get("/stream/global")
-async def stream_global(request: Request, after_ts: float = 0, after_id: Optional[str] = None):
+async def stream_global(
+    request: Request,
+    after_ts: float = 0,
+    after_id: Optional[str] = None,
+    current_user: UserDB = Depends(get_current_user_any),
+):
     async def gen():
         async for chunk in orchestrator.run_global_stream(after_ts=after_ts, after_id=after_id):
             if await request.is_disconnected():
@@ -38,17 +45,20 @@ async def stream_global(request: Request, after_ts: float = 0, after_id: Optiona
     )
 
 @router.get("/stream/{task_id}")
-async def stream_task(task_id: str, request: Request):
+async def stream_task(task_id: str, request: Request, current_user: UserDB = Depends(get_current_user_any)):
     async def gen():
+        yield f"event: status\ndata: {json.dumps({'status': 'running'})}\n\n"
         yield f"event: progress\ndata: {json.dumps({'step': 'init', 'message': 'Initializing...'})}\n\n"
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.2)
         if await request.is_disconnected():
             return
         yield f"event: progress\ndata: {json.dumps({'step': 'search', 'message': 'Searching...'})}\n\n"
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.2)
         if await request.is_disconnected():
             return
-        yield f"event: done\ndata: {json.dumps({'answer': 'Dummy answer'})}\n\n"
+
+        yield f"event: result\ndata: {json.dumps({'answer': 'Dummy answer', 'sources': []}, ensure_ascii=False)}\n\n"
+        yield f"event: status\ndata: {json.dumps({'status': 'done'})}\n\n"
 
     return StreamingResponse(
         gen(),
