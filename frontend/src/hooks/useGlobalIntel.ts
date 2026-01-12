@@ -33,6 +33,18 @@ export function useGlobalIntel(enabled: boolean = true) {
     const favoritesRef = useRef<Set<string>>(new Set());
     const favoritesLoadedRef = useRef(false);
 
+    const closeConnection = () => {
+        if (reconnectTimerRef.current) {
+            window.clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = null;
+        }
+        if (eventSourceRef.current) {
+            isClosingRef.current = true;
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+        }
+    };
+
     const getFavoritesStorageKey = () => {
         const username = localStorage.getItem('username') || 'anon';
         return `favorites:intel_ids:${username}`;
@@ -115,15 +127,7 @@ export function useGlobalIntel(enabled: boolean = true) {
 
     useEffect(() => {
         if (!enabled) {
-            if (eventSourceRef.current) {
-                isClosingRef.current = true;
-                eventSourceRef.current.close();
-                eventSourceRef.current = null;
-            }
-            if (reconnectTimerRef.current) {
-                window.clearTimeout(reconnectTimerRef.current);
-                reconnectTimerRef.current = null;
-            }
+            closeConnection();
             return;
         }
 
@@ -131,16 +135,7 @@ export function useGlobalIntel(enabled: boolean = true) {
         attemptRef.current = 0;
 
         const connect = () => {
-            if (reconnectTimerRef.current) {
-                window.clearTimeout(reconnectTimerRef.current);
-                reconnectTimerRef.current = null;
-            }
-
-            if (eventSourceRef.current) {
-                isClosingRef.current = true;
-                eventSourceRef.current.close();
-                eventSourceRef.current = null;
-            }
+            closeConnection();
 
             isClosingRef.current = false;
             setStatus(attemptRef.current > 0 ? 'reconnecting' : 'connecting');
@@ -157,6 +152,12 @@ export function useGlobalIntel(enabled: boolean = true) {
 
             es.onerror = () => {
                 if (isClosingRef.current) {
+                    return;
+                }
+                if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+                    return;
+                }
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                     return;
                 }
                 if (attemptRef.current >= 5) {
@@ -203,16 +204,45 @@ export function useGlobalIntel(enabled: boolean = true) {
         connect();
 
         return () => {
-            if (reconnectTimerRef.current) {
-                window.clearTimeout(reconnectTimerRef.current);
-                reconnectTimerRef.current = null;
-            }
-            if (eventSourceRef.current) {
-                isClosingRef.current = true;
-                eventSourceRef.current.close();
-            }
+            closeConnection();
         };
     }, [enabled, reconnectToken]);
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                closeConnection();
+                setStatus('reconnecting');
+                return;
+            }
+            attemptRef.current = 0;
+            setStatus('connecting');
+            setReconnectToken((x) => x + 1);
+        };
+
+        const onOnline = () => {
+            attemptRef.current = 0;
+            setStatus('connecting');
+            setReconnectToken((x) => x + 1);
+        };
+
+        const onOffline = () => {
+            closeConnection();
+            setStatus('reconnecting');
+        };
+
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        window.addEventListener('online', onOnline);
+        window.addEventListener('offline', onOffline);
+
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            window.removeEventListener('online', onOnline);
+            window.removeEventListener('offline', onOffline);
+        };
+    }, [enabled]);
 
     const reconnect = () => {
         attemptRef.current = 0;

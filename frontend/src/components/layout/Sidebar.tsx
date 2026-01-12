@@ -1,4 +1,4 @@
-import { LayoutDashboard, Star, BarChart2, Settings, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, Star, BarChart2, Settings, LogIn, LogOut, User as UserIcon, Globe } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -12,6 +12,7 @@ export function Sidebar() {
     const menuItems = [
         { label: "情报智探", route: "/intel", icon: LayoutDashboard },
         { label: "我的收藏", route: "/favorites", icon: Star },
+        { label: "情报来源", route: "/sources", icon: Globe },
         { label: "数据概览", route: "/overview", icon: BarChart2 }
     ];
 

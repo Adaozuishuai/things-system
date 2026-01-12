@@ -4,6 +4,7 @@ import { IntelPage } from '@/pages/IntelPage';
 import { IntelDetailPage } from '@/pages/IntelDetailPage';
 import { FavoritesPage } from '@/pages/FavoritesPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { SourcesPage } from '@/pages/SourcesPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -47,6 +48,7 @@ function App() {
           <Route path="intel" element={<RequireAuth><IntelPage /></RequireAuth>} />
           <Route path="intel/:id" element={<RequireAuth><IntelDetailPage /></RequireAuth>} />
           <Route path="favorites" element={<FavoritesPage />} />
+          <Route path="sources" element={<RequireAuth><SourcesPage /></RequireAuth>} />
           <Route path="overview" element={<PlaceholderPage title="数据概览" />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
