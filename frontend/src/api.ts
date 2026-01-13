@@ -10,14 +10,7 @@ const API_BASE = normalizeBaseUrl(
 
 const SSE_BASE = normalizeBaseUrl(
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SSE_BASE_URL) ||
-        ((typeof import.meta !== 'undefined' &&
-            import.meta.env &&
-            import.meta.env.DEV &&
-            typeof window !== 'undefined' &&
-            API_BASE === '/api' &&
-            (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) ?
-            `${window.location.protocol}//${window.location.hostname}:8001/api` :
-            API_BASE)
+        API_BASE
 );
 
 const api = axios.create({
