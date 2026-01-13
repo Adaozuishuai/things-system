@@ -2,8 +2,23 @@ import axios, { AxiosError } from 'axios';
 import { IntelListResponse, SearchType, TimeRange, IntelItem as IntelItemType } from './types';
 
 // 处理 Vite 环境下 import.meta.env 可能不存在的情况
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api';
-const SSE_BASE = API_BASE;
+const normalizeBaseUrl = (base: string) => base.replace(/\/+$/, '');
+
+const API_BASE = normalizeBaseUrl(
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api'
+);
+
+const SSE_BASE = normalizeBaseUrl(
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SSE_BASE_URL) ||
+        ((typeof import.meta !== 'undefined' &&
+            import.meta.env &&
+            import.meta.env.DEV &&
+            typeof window !== 'undefined' &&
+            API_BASE === '/api' &&
+            (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) ?
+            `${window.location.protocol}//${window.location.hostname}:8001/api` :
+            API_BASE)
+);
 
 const api = axios.create({
     baseURL: API_BASE,

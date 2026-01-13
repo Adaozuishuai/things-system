@@ -48,6 +48,7 @@ class AgentOrchestrator:
         logger.info(f"New stream connection: after_ts={after_ts}, after_id={after_id}")
         q = asyncio.Queue()
         self.listeners.append(q)
+        heartbeat_seconds = 25.0
         
         async with self.lock:
             cache = list(self.global_cache)
@@ -84,8 +85,11 @@ class AgentOrchestrator:
 
         try:
             while True:
-                msg = await q.get()
-                yield msg
+                try:
+                    msg = await asyncio.wait_for(q.get(), timeout=heartbeat_seconds)
+                    yield msg
+                except asyncio.TimeoutError:
+                    yield ": keep-alive\n\n"
         except asyncio.CancelledError:
             pass
         finally:
