@@ -57,11 +57,11 @@ An intelligent intelligence aggregation and refinement platform. This system pol
 
 3.  Install dependencies:
     ```bash
-    pip install -r requirements.txt
+    pip install -r ../requirements.txt
     ```
 
 4.  Configure Environment Variables:
-    Create a `.env` file in the `backend` directory with the following content:
+    Create or edit `backend/.env` with the following content:
     ```env
     # AI Provider
     DASHSCOPE_API_KEY=your_dashscope_api_key
@@ -77,7 +77,7 @@ An intelligent intelligence aggregation and refinement platform. This system pol
     # Security
     SECRET_KEY=your_secret_key_generated_by_openssl
     ALGORITHM=HS256
-    ACCESS_TOKEN_EXPIRE_MINUTES=1440
+    ACCESS_TOKEN_EXPIRE_MINUTES=30
     ```
 
 5.  Run the Server:
@@ -104,6 +104,34 @@ An intelligent intelligence aggregation and refinement platform. This system pol
     ```
     The application will be available at `http://localhost:5173`.
 
+## 🏭 Production (PM2)
+
+### Backend (PM2)
+
+1.  Ensure the backend virtualenv is created and dependencies are installed:
+    ```bash
+    cd backend
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r ../requirements.txt
+    ```
+
+2.  Install PM2 and start the API:
+    ```bash
+    npm i -g pm2
+    pm2 start backend/ecosystem.config.cjs
+    pm2 status
+    pm2 logs api
+    ```
+
+### Frontend (Build)
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
 ## 📄 Export (DOCX)
 
 -   **Endpoint**: `POST /api/intel/export`
@@ -121,7 +149,7 @@ An intelligent intelligence aggregation and refinement platform. This system pol
 
 ## 🧪 Tests
 
-This repo uses simple Python scripts under `tests/` for validation.
+This repo uses runnable Python scripts under `tests/` for validation.
 
 -   DOCX export format test:
     ```bash
@@ -129,10 +157,13 @@ This repo uses simple Python scripts under `tests/` for validation.
     ```
     This test generates a DOCX, reads it back, and asserts the paragraph order and content.
 
+Some HTTP-flow tests use `BASE_URL = "http://localhost:8000"` in the script; adjust it to your actual API base (e.g. `http://localhost:8001`) if needed.
+
 ## 📂 Project Structure
 
 ```
 system_mvp/
+├── requirements.txt
 ├── backend/
 │   ├── app/
 │   │   ├── agent/          # AI Agent logic (Orchestrator, Refiner)
@@ -142,7 +173,7 @@ system_mvp/
 │   │   ├── models.py       # Pydantic models
 │   │   ├── db_models.py    # SQLAlchemy models
 │   │   └── main.py         # App entry point
-│   ├── requirements.txt
+│   ├── ecosystem.config.cjs
 │   └── .env
 ├── frontend/
 │   ├── src/
@@ -153,6 +184,7 @@ system_mvp/
 │   │   ├── api.ts          # API Client
 │   │   └── App.tsx
 │   └── package.json
+├── tests/
 └── readme.md
 ```
 
